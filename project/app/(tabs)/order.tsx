@@ -110,7 +110,8 @@ const serviceCategories = [
 ];
 
 export default function BookServiceScreen() {
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
+  const colors = isDark ? Colors.dark : Colors.light;
   const { user } = useAuth();
   const { addOrder } = useOrders();
   
