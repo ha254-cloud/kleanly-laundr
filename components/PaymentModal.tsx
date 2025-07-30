@@ -181,6 +181,21 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     }, 2000);
   };
 
+  const handleContinue = () => {
+    if (selectedMethod === 'cash') {
+      setStep('processing');
+      handleCashPayment();
+    } else if (selectedMethod === 'mpesa') {
+      setStep('details');
+    } else if (selectedMethod === 'card') {
+      Alert.alert(
+        'Coming Soon',
+        'Card payments will be available in the next update. Please use M-Pesa or Cash on Pickup for now.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
   const resetModal = () => {
     setSelectedMethod('');
     setMpesaNumber('');
@@ -197,232 +212,254 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   };
 
   const renderMethodSelection = () => (
-    <ScrollView style={styles.methodsContainer} showsVerticalScrollIndicator={false}>
-      <View style={styles.headerSection}>
-        <Text style={[styles.stepTitle, { color: colors.text }]}>
-          Choose Payment Method
-        </Text>
-        <Text style={[styles.stepSubtitle, { color: colors.textSecondary }]}>
-          Select how you'd like to pay for your order
-        </Text>
-      </View>
-
-      <View style={styles.totalSection}>
-        <LinearGradient
-          colors={[colors.primary + '15', colors.primary + '08']}
-          style={styles.totalGradient}
-        >
-          <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>
-            Order Total
-          </Text>
-          <Text style={[styles.totalAmount, { color: colors.primary }]}>
-            KSH {total.toLocaleString()}
-          </Text>
-          <Text style={[styles.totalNote, { color: colors.textSecondary }]}>
-            Including all taxes and fees
-          </Text>
-        </LinearGradient>
-      </View>
-
-      {paymentMethods.map((method) => (
-        <TouchableOpacity
-          key={method.id}
-          style={[
-            styles.paymentMethodCard,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              opacity: method.disabled ? 0.6 : 1,
-            },
-          ]}
-          onPress={() => !method.disabled && setSelectedMethod(method.id)}
-          disabled={method.disabled}
-          activeOpacity={0.8}
-        >
-          <LinearGradient
-            colors={method.recommended ? [method.color + '08', method.color + '04'] : ['transparent', 'transparent']}
-            style={styles.methodGradient}
-          >
-            <View style={styles.methodContent}>
-              <View style={styles.methodLeft}>
-                <View style={[styles.methodIcon, { backgroundColor: method.color + '20' }]}>
-                  {method.icon}
-                </View>
-                <View style={styles.methodInfo}>
-                  <View style={styles.methodHeader}>
-                    <Text style={[styles.methodTitle, { color: colors.text }]}>
-                      {method.title}
-                    </Text>
-                    {method.recommended && (
-                      <View style={[styles.recommendedBadge, { backgroundColor: method.color }]}>
-                        <Text style={styles.recommendedText}>RECOMMENDED</Text>
-                      </View>
-                    )}
-                    {method.disabled && (
-                      <View style={[styles.comingSoonBadge, { backgroundColor: colors.warning }]}>
-                        <Text style={styles.comingSoonText}>COMING SOON</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={[styles.methodSubtitle, { color: colors.textSecondary }]}>
-                    {method.subtitle}
-                  </Text>
-                  <Text style={[styles.methodDescription, { color: method.color }]}>
-                    {method.description}
-                  </Text>
-                  <View style={styles.methodDetails}>
-                    <View style={styles.methodDetailItem}>
-                      <Clock size={12} color={colors.textSecondary} />
-                      <Text style={[styles.methodDetailText, { color: colors.textSecondary }]}>
-                        {method.processingTime}
-                      </Text>
-                    </View>
-                    <View style={styles.methodDetailItem}>
-                      <Shield size={12} color={colors.textSecondary} />
-                      <Text style={[styles.methodDetailText, { color: colors.textSecondary }]}>
-                        {method.fees}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-              <View style={styles.methodArrow}>
-                <Text style={[styles.arrowText, { color: method.color }]}>→</Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
-      ))}
-
-      {/* Continue Button */}
-      {selectedMethod && (
-        <LinearGradient
-          colors={[colors.primary, colors.primary + 'E6']}
-          style={styles.continueButtonGradient}
-        >
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={() => {
-              if (selectedMethod === 'cash') {
-                setStep('processing');
-                handleCashPayment();
-              } else if (selectedMethod === 'mpesa') {
-                setStep('details');
-              } else if (selectedMethod === 'card') {
-                Alert.alert(
-                  'Coming Soon',
-                  'Card payments will be available in the next update. Please use M-Pesa or Cash on Pickup for now.',
-                  [{ text: 'OK' }]
-                );
-              }
-            }}
-            activeOpacity={0.9}
-          >
-            <Text style={styles.continueButtonText}>
-              {selectedMethod === 'cash' ? 'Confirm Order' : 
-               selectedMethod === 'mpesa' ? 'Continue with M-Pesa' : 
-               'Continue'}
-            </Text>
-          </TouchableOpacity>
-        </LinearGradient>
-      )}
-
-      <TouchableOpacity
-        style={[styles.securityInfo, { backgroundColor: colors.primary + '10' }]}
-        onPress={() => setShowSecurityInfo(true)}
+    <View style={styles.methodsContainer}>
+      <ScrollView 
+        style={styles.scrollContainer} 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        <Shield size={20} color={colors.primary} />
-        <Text style={[styles.securityText, { color: colors.primary }]}>
-          Your payments are secured with 256-bit encryption
-        </Text>
-        <Info size={16} color={colors.primary} />
-      </TouchableOpacity>
-    </ScrollView>
+        <View style={styles.headerSection}>
+          <Text style={[styles.stepTitle, { color: colors.text }]}>
+            Choose Payment Method
+          </Text>
+          <Text style={[styles.stepSubtitle, { color: colors.textSecondary }]}>
+            Select how you'd like to pay for your order
+          </Text>
+        </View>
+
+        <View style={styles.totalSection}>
+          <LinearGradient
+            colors={[colors.primary + '15', colors.primary + '08']}
+            style={styles.totalGradient}
+          >
+            <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>
+              Order Total
+            </Text>
+            <Text style={[styles.totalAmount, { color: colors.primary }]}>
+              KSH {total.toLocaleString()}
+            </Text>
+            <Text style={[styles.totalNote, { color: colors.textSecondary }]}>
+              Including all taxes and fees
+            </Text>
+          </LinearGradient>
+        </View>
+
+        {paymentMethods.map((method) => (
+          <TouchableOpacity
+            key={method.id}
+            style={[
+              styles.paymentMethodCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: selectedMethod === method.id ? method.color : colors.border,
+                borderWidth: selectedMethod === method.id ? 2 : 1,
+                opacity: method.disabled ? 0.6 : 1,
+              },
+            ]}
+            onPress={() => !method.disabled && setSelectedMethod(method.id)}
+            disabled={method.disabled}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={selectedMethod === method.id ? [method.color + '15', method.color + '08'] : 
+                     method.recommended ? [method.color + '08', method.color + '04'] : ['transparent', 'transparent']}
+              style={styles.methodGradient}
+            >
+              <View style={styles.methodContent}>
+                <View style={styles.methodLeft}>
+                  <View style={[styles.methodIcon, { backgroundColor: method.color + '20' }]}>
+                    {method.icon}
+                  </View>
+                  <View style={styles.methodInfo}>
+                    <View style={styles.methodHeader}>
+                      <Text style={[styles.methodTitle, { color: colors.text }]}>
+                        {method.title}
+                      </Text>
+                      {method.recommended && (
+                        <View style={[styles.recommendedBadge, { backgroundColor: method.color }]}>
+                          <Text style={styles.recommendedText}>RECOMMENDED</Text>
+                        </View>
+                      )}
+                      {method.disabled && (
+                        <View style={[styles.comingSoonBadge, { backgroundColor: colors.warning }]}>
+                          <Text style={styles.comingSoonText}>COMING SOON</Text>
+                        </View>
+                      )}
+                      {selectedMethod === method.id && (
+                        <View style={[styles.selectedBadge, { backgroundColor: colors.success }]}>
+                          <Text style={styles.selectedText}>SELECTED</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={[styles.methodSubtitle, { color: colors.textSecondary }]}>
+                      {method.subtitle}
+                    </Text>
+                    <Text style={[styles.methodDescription, { color: method.color }]}>
+                      {method.description}
+                    </Text>
+                    <View style={styles.methodDetails}>
+                      <View style={styles.methodDetailItem}>
+                        <Clock size={12} color={colors.textSecondary} />
+                        <Text style={[styles.methodDetailText, { color: colors.textSecondary }]}>
+                          {method.processingTime}
+                        </Text>
+                      </View>
+                      <View style={styles.methodDetailItem}>
+                        <Shield size={12} color={colors.textSecondary} />
+                        <Text style={[styles.methodDetailText, { color: colors.textSecondary }]}>
+                          {method.fees}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+                <View style={styles.methodArrow}>
+                  <View
+                    style={[
+                      styles.radioButton,
+                      {
+                        borderColor: selectedMethod === method.id ? method.color : colors.border,
+                        backgroundColor: selectedMethod === method.id ? method.color : 'transparent',
+                      },
+                    ]}
+                  >
+                    {selectedMethod === method.id && (
+                      <View style={styles.radioButtonInner} />
+                    )}
+                  </View>
+                </View>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        ))}
+
+        <TouchableOpacity
+          style={[styles.securityInfo, { backgroundColor: colors.primary + '10' }]}
+          onPress={() => setShowSecurityInfo(true)}
+        >
+          <Shield size={20} color={colors.primary} />
+          <Text style={[styles.securityText, { color: colors.primary }]}>
+            Your payments are secured with 256-bit encryption
+          </Text>
+          <Info size={16} color={colors.primary} />
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* Fixed Continue Button */}
+      {selectedMethod && (
+        <View style={styles.fixedButtonContainer}>
+          <LinearGradient
+            colors={[colors.primary, colors.primary + 'E6']}
+            style={styles.continueButtonGradient}
+          >
+            <TouchableOpacity
+              style={styles.continueButton}
+              onPress={handleContinue}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.continueButtonText}>
+                {selectedMethod === 'cash' ? 'Confirm Order' : 
+                 selectedMethod === 'mpesa' ? 'Continue with M-Pesa' : 
+                 'Continue'}
+              </Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+      )}
+    </View>
   );
 
   const renderMpesaDetails = () => (
-    <ScrollView style={styles.detailsContainer} showsVerticalScrollIndicator={false}>
-      <View style={styles.headerSection}>
-        <Text style={[styles.stepTitle, { color: colors.text }]}>
-          M-Pesa Payment
-        </Text>
-        <Text style={[styles.stepSubtitle, { color: colors.textSecondary }]}>
-          Enter your M-Pesa number to receive payment prompt
-        </Text>
-      </View>
-
-      <Card style={styles.mpesaCard}>
-        <View style={styles.mpesaHeader}>
-          <View style={[styles.mpesaIcon, { backgroundColor: '#00C851' + '20' }]}>
-            <Smartphone size={32} color="#00C851" />
-          </View>
-          <Text style={[styles.mpesaTitle, { color: colors.text }]}>
+    <View style={styles.detailsContainer}>
+      <ScrollView 
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.headerSection}>
+          <Text style={[styles.stepTitle, { color: colors.text }]}>
             M-Pesa Payment
           </Text>
-          <Text style={[styles.mpesaAmount, { color: '#00C851' }]}>
-            KSH {total.toLocaleString()}
+          <Text style={[styles.stepSubtitle, { color: colors.textSecondary }]}>
+            Enter your M-Pesa number to receive payment prompt
           </Text>
         </View>
 
-        <Input
-          label="M-Pesa Number"
-          value={mpesaNumber}
-          onChangeText={setMpesaNumber}
-          placeholder="+254 700 000 000"
-          keyboardType="phone-pad"
-          leftIcon={<Smartphone size={20} color={colors.textSecondary} />}
-          style={styles.mpesaInput}
-        />
+        <Card style={styles.mpesaCard}>
+          <View style={styles.mpesaHeader}>
+            <View style={[styles.mpesaIcon, { backgroundColor: '#00C851' + '20' }]}>
+              <Smartphone size={32} color="#00C851" />
+            </View>
+            <Text style={[styles.mpesaTitle, { color: colors.text }]}>
+              M-Pesa Payment
+            </Text>
+            <Text style={[styles.mpesaAmount, { color: '#00C851' }]}>
+              KSH {total.toLocaleString()}
+            </Text>
+          </View>
 
-        <View style={styles.mpesaSteps}>
-          <Text style={[styles.stepsTitle, { color: colors.text }]}>
-            How it works:
-          </Text>
-          <View style={styles.stepItem}>
-            <Text style={styles.stepNumber}>1</Text>
-            <Text style={[styles.stepText, { color: colors.textSecondary }]}>
-              Enter your M-Pesa number
-            </Text>
-          </View>
-          <View style={styles.stepItem}>
-            <Text style={styles.stepNumber}>2</Text>
-            <Text style={[styles.stepText, { color: colors.textSecondary }]}>
-              You'll receive a payment prompt on your phone
-            </Text>
-          </View>
-          <View style={styles.stepItem}>
-            <Text style={styles.stepNumber}>3</Text>
-            <Text style={[styles.stepText, { color: colors.textSecondary }]}>
-              Enter your M-Pesa PIN to complete payment
-            </Text>
-          </View>
-        </View>
-      </Card>
+          <Input
+            label="M-Pesa Number"
+            value={mpesaNumber}
+            onChangeText={setMpesaNumber}
+            placeholder="+254 700 000 000"
+            keyboardType="phone-pad"
+            leftIcon={<Smartphone size={20} color={colors.textSecondary} />}
+            style={styles.mpesaInput}
+          />
 
-      <View style={styles.actionButtons}>
-        <Button
-          title="Back"
-          onPress={() => setStep('select')}
-          variant="outline"
-          style={styles.backButton}
-        />
-        <LinearGradient
-          colors={['#00C851', '#00A844']}
-          style={styles.payButtonGradient}
-        >
-          <TouchableOpacity
-            style={styles.payButton}
-            onPress={handleMpesaPayment}
-            disabled={!mpesaNumber.trim()}
+          <View style={styles.mpesaSteps}>
+            <Text style={[styles.stepsTitle, { color: colors.text }]}>
+              How it works:
+            </Text>
+            <View style={styles.stepItem}>
+              <Text style={styles.stepNumber}>1</Text>
+              <Text style={[styles.stepText, { color: colors.textSecondary }]}>
+                Enter your M-Pesa number
+              </Text>
+            </View>
+            <View style={styles.stepItem}>
+              <Text style={styles.stepNumber}>2</Text>
+              <Text style={[styles.stepText, { color: colors.textSecondary }]}>
+                You'll receive a payment prompt on your phone
+              </Text>
+            </View>
+            <View style={styles.stepItem}>
+              <Text style={styles.stepNumber}>3</Text>
+              <Text style={[styles.stepText, { color: colors.textSecondary }]}>
+                Enter your M-Pesa PIN to complete payment
+              </Text>
+            </View>
+          </View>
+        </Card>
+      </ScrollView>
+
+      <View style={styles.fixedButtonContainer}>
+        <View style={styles.actionButtons}>
+          <Button
+            title="Back"
+            onPress={() => setStep('select')}
+            variant="outline"
+            style={styles.backButton}
+          />
+          <LinearGradient
+            colors={['#00C851', '#00A844']}
+            style={styles.payButtonGradient}
           >
-            <Smartphone size={20} color="#FFFFFF" />
-            <Text style={styles.payButtonText}>
-              Send Payment Request
-            </Text>
-          </TouchableOpacity>
-        </LinearGradient>
+            <TouchableOpacity
+              style={styles.payButton}
+              onPress={handleMpesaPayment}
+              disabled={!mpesaNumber.trim()}
+            >
+              <Smartphone size={20} color="#FFFFFF" />
+              <Text style={styles.payButtonText}>
+                Send Payment Request
+              </Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
       </View>
-    </ScrollView>
+    </View>
   );
 
   const renderProcessing = () => (
@@ -634,8 +671,14 @@ const styles = StyleSheet.create({
   
   // Method Selection Styles
   methodsContainer: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
     padding: 20,
-    paddingBottom: 100,
+    paddingBottom: 20,
   },
   headerSection: {
     alignItems: 'center',
@@ -675,7 +718,6 @@ const styles = StyleSheet.create({
   paymentMethodCard: {
     borderRadius: 20,
     marginBottom: 16,
-    borderWidth: 1,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -710,17 +752,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
+    flexWrap: 'wrap',
+    gap: 4,
   },
   methodTitle: {
     fontSize: 18,
     fontWeight: '700',
-    marginRight: 8,
   },
   recommendedBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
-    marginRight: 4,
   },
   recommendedText: {
     color: '#FFFFFF',
@@ -733,6 +775,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   comingSoonText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  selectedBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  selectedText: {
     color: '#FFFFFF',
     fontSize: 9,
     fontWeight: '700',
@@ -764,9 +816,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  arrowText: {
-    fontSize: 20,
-    fontWeight: '700',
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioButtonInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FFFFFF',
   },
   securityInfo: {
     flexDirection: 'row',
@@ -781,11 +843,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  fixedButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingBottom: 32,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+  },
   
   // M-Pesa Details Styles
   detailsContainer: {
-    padding: 20,
-    paddingBottom: 100,
+    flex: 1,
   },
   mpesaCard: {
     padding: 24,
@@ -846,10 +919,6 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'row',
     gap: 12,
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
   },
   backButton: {
     flex: 1,
@@ -1014,8 +1083,6 @@ const styles = StyleSheet.create({
   // Continue Button Styles
   continueButtonGradient: {
     borderRadius: 16,
-    marginTop: 24,
-    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
