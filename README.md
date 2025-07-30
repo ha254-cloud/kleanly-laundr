@@ -53,6 +53,7 @@ A modern laundry service app built with React Native and Expo.
    ```bash
    git clone <repository-url>
    cd laundry-app
+   cd project
    ```
 
 2. Install dependencies:
