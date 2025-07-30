@@ -8,6 +8,7 @@ import {
   Platform,
   Alert,
   TouchableOpacity,
+  ImageBackground,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
@@ -122,84 +123,184 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+      <ImageBackground
+        source={require('../assets/images/space.jpg')}
+        style={styles.backgroundImage}
+        imageStyle={styles.backgroundImageStyle}
       >
-        <View style={styles.content}>
-          {/* Logo Section */}
-          <View style={styles.logoSection}>
-            <View style={styles.logoContainer}>
-              <Logo size="large" showText={true} />
-              <View style={[styles.logoGlow, { backgroundColor: colors.primary + '20' }]} />
+        <View style={styles.overlay} />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <View style={styles.content}>
+            {/* Logo Section */}
+            <View style={styles.logoSection}>
+              <View style={styles.logoContainer}>
+                <Logo size="large" showText={true} />
+                <View style={[styles.logoGlow, { backgroundColor: 'rgba(255,255,255,0.15)' }]} />
+              </View>
+              <Text style={[styles.tagline, { color: 'rgba(255,255,255,0.9)' }]}>
+                Premium Laundry & Dry Cleaning
+              </Text>
             </View>
-            <Text style={[styles.tagline, { color: colors.textSecondary }]}>
-              Premium Laundry & Dry Cleaning
-            </Text>
-          </View>
 
-          {/* Login Form */}
-          <Card style={styles.formCard}>
-            <Text style={[styles.formTitle, { color: colors.text }]}>
-              {isLogin ? 'Welcome Back' : 'Create Account'}
-            </Text>
-            <Text style={[styles.formSubtitle, { color: colors.textSecondary }]}>
-              {isLogin 
-                ? 'Sign in to your account' 
-                : 'Join Kleanly for premium laundry services'
-              }
-            </Text>
+            {/* Login Form */}
+            <Card style={styles.formCard}>
+              <Text style={[styles.formTitle, { color: colors.text }]}>
+                {isLogin ? 'Welcome Back' : 'Create Account'}
+              </Text>
+              <Text style={[styles.formSubtitle, { color: colors.textSecondary }]}>
+                {isLogin 
+                  ? 'Sign in to your account' 
+                  : 'Join Kleanly for premium laundry services'
+                }
+              </Text>
 
-            <Input
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Enter your email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-
-            <Input
-              label="Password"
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Enter your password"
-              secureTextEntry
-            />
-
-            {!isLogin && (
               <Input
-                label="Confirm Password"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="Confirm your password"
+                label="Email"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Enter your email"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <Input
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Enter your password"
                 secureTextEntry
               />
-            )}
 
-            <Button
-              title={isLogin ? 'Sign In' : 'Create Account'}
-              onPress={handleSubmit}
-              style={styles.submitButton}
-            />
+              {!isLogin && (
+                <Input
+                  label="Confirm Password"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Confirm your password"
+                  secureTextEntry
+                />
+              )}
 
-            <View style={styles.switchMode}>
-              <Text style={[styles.switchText, { color: colors.textSecondary }]}>
-                {isLogin ? "Don't have an account?" : 'Already have an account?'}
-              </Text>
               <Button
-                title={isLogin ? 'Sign Up' : 'Sign In'}
-                onPress={() => setIsLogin(!isLogin)}
-                variant="outline"
-                size="small"
-                style={styles.switchButton}
+                title={isLogin ? 'Sign In' : 'Create Account'}
+                onPress={handleSubmit}
+                style={styles.submitButton}
               />
-            </View>
-          </Card>
 
-        </View>
-      </KeyboardAvoidingView>
+              <View style={styles.switchMode}>
+                <Text style={[styles.switchText, { color: colors.textSecondary }]}>
+                  {isLogin ? "Don't have an account?" : 'Already have an account?'}
+                </Text>
+                <Button
+                  title={isLogin ? 'Sign Up' : 'Sign In'}
+                  onPress={() => setIsLogin(!isLogin)}
+                  variant="outline"
+                  size="small"
+                  style={styles.switchButton}
+                />
+              </View>
+            </Card>
+
+          </View>
+        </KeyboardAvoidingView>
+      </ImageBackground>
     </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  backgroundImage: {
+    flex: 1,
+  },
+  backgroundImageStyle: {
+    resizeMode: 'cover',
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+  },
+  logoSection: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  logoContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoGlow: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    opacity: 0.3,
+    zIndex: -1,
+  },
+  tagline: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 16,
+    fontWeight: '500',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  formCard: {
+    padding: 24,
+    marginBottom: 20,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  formSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  submitButton: {
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  switchMode: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  switchText: {
+    fontSize: 14,
+  },
+  switchButton: {
+    paddingHorizontal: 16,
+  },
+});
   );
 }
 
