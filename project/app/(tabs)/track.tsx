@@ -270,79 +270,88 @@ export default function TrackOrderScreen() {
         {/* Order Details */}
         {selectedOrder && (
           <View style={styles.orderSection}>
-            <LinearGradient
-              colors={['#FFFFFF', '#F8FAFF']}
-              style={styles.orderGradient}
-            >
-              <Card style={styles.orderCard}>
-                {/* Order Header */}
-                <View style={styles.orderHeader}>
-                  <View style={styles.orderHeaderLeft}>
-                    <Text style={[styles.orderId, { color: colors.text }]}>
-                      {formatOrderId(selectedOrder.id)}
-                    </Text>
-                    <Text style={[styles.orderDate, { color: colors.textSecondary }]}>
-                      Placed on {formatDate(selectedOrder.createdAt)}
-                    </Text>
-                  </View>
-                  <View style={[
-                    styles.statusBadge, 
-                    { backgroundColor: getStatusColor(selectedOrder.status) + '20' }
-                  ]}>
-                    {getStatusIcon(selectedOrder.status)}
-                    <Text style={[
-                      styles.statusText, 
-                      { color: getStatusColor(selectedOrder.status) }
+            {/* Check if order has driver assigned */}
+            {selectedOrder.status === 'in-progress' || selectedOrder.status === 'confirmed' ? (
+              <LiveTrackingMap 
+                orderId={selectedOrder.id!}
+                onDriverCall={(phone) => Alert.alert('Call Driver', `Calling ${phone}`)}
+                onDriverMessage={(phone) => Alert.alert('Message Driver', `Messaging ${phone}`)}
+              />
+            ) : (
+              <LinearGradient
+                colors={['#FFFFFF', '#F8FAFF']}
+                style={styles.orderGradient}
+              >
+                <Card style={styles.orderCard}>
+                  {/* Order Header */}
+                  <View style={styles.orderHeader}>
+                    <View style={styles.orderHeaderLeft}>
+                      <Text style={[styles.orderId, { color: colors.text }]}>
+                        {formatOrderId(selectedOrder.id)}
+                      </Text>
+                      <Text style={[styles.orderDate, { color: colors.textSecondary }]}>
+                        Placed on {formatDate(selectedOrder.createdAt)}
+                      </Text>
+                    </View>
+                    <View style={[
+                      styles.statusBadge, 
+                      { backgroundColor: getStatusColor(selectedOrder.status) + '20' }
                     ]}>
-                      {selectedOrder.status.toUpperCase()}
-                    </Text>
+                      {getStatusIcon(selectedOrder.status)}
+                      <Text style={[
+                        styles.statusText, 
+                        { color: getStatusColor(selectedOrder.status) }
+                      ]}>
+                        {selectedOrder.status.toUpperCase()}
+                      </Text>
+                    </View>
                   </View>
-                </View>
 
-                {/* Order Summary */}
-                <View style={styles.orderSummary}>
-                  <View style={styles.summaryRow}>
-                    <View style={[styles.summaryIcon, { backgroundColor: colors.primary + '20' }]}>
-                      <Package size={16} color={colors.primary} />
+                  {/* Order Summary */}
+                  <View style={styles.orderSummary}>
+                    <View style={styles.summaryRow}>
+                      <View style={[styles.summaryIcon, { backgroundColor: colors.primary + '20' }]}>
+                        <Package size={16} color={colors.primary} />
+                      </View>
+                      <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Service:</Text>
+                      <Text style={[styles.summaryValue, { color: colors.text }]}>
+                        {selectedOrder.category.replace('-', ' ').toUpperCase()}
+                      </Text>
                     </View>
-                    <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Service:</Text>
-                    <Text style={[styles.summaryValue, { color: colors.text }]}>
-                      {selectedOrder.category.replace('-', ' ').toUpperCase()}
-                    </Text>
-                  </View>
-                  
-                  <View style={styles.summaryRow}>
-                    <View style={[styles.summaryIcon, { backgroundColor: colors.success + '20' }]}>
-                      <MapPin size={16} color={colors.success} />
+                    
+                    <View style={styles.summaryRow}>
+                      <View style={[styles.summaryIcon, { backgroundColor: colors.success + '20' }]}>
+                        <MapPin size={16} color={colors.success} />
+                      </View>
+                      <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Area:</Text>
+                      <Text style={[styles.summaryValue, { color: colors.text }]}>
+                        {selectedOrder.address}
+                      </Text>
                     </View>
-                    <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Area:</Text>
-                    <Text style={[styles.summaryValue, { color: colors.text }]}>
-                      {selectedOrder.address}
-                    </Text>
-                  </View>
-                  
-                  <View style={styles.summaryRow}>
-                    <View style={[styles.summaryIcon, { backgroundColor: colors.warning + '20' }]}>
-                      <Calendar size={16} color={colors.warning} />
+                    
+                    <View style={styles.summaryRow}>
+                      <View style={[styles.summaryIcon, { backgroundColor: colors.warning + '20' }]}>
+                        <Calendar size={16} color={colors.warning} />
+                      </View>
+                      <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Est. Delivery:</Text>
+                      <Text style={[styles.summaryValue, { color: colors.text }]}>
+                        {getEstimatedDelivery(selectedOrder)}
+                      </Text>
                     </View>
-                    <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Est. Delivery:</Text>
-                    <Text style={[styles.summaryValue, { color: colors.text }]}>
-                      {getEstimatedDelivery(selectedOrder)}
-                    </Text>
-                  </View>
-                  
-                  <View style={[styles.summaryRow, styles.totalRow]}>
-                    <View style={[styles.summaryIcon, { backgroundColor: colors.primary + '20' }]}>
-                      <Award size={16} color={colors.primary} />
+                    
+                    <View style={[styles.summaryRow, styles.totalRow]}>
+                      <View style={[styles.summaryIcon, { backgroundColor: colors.primary + '20' }]}>
+                        <Award size={16} color={colors.primary} />
+                      </View>
+                      <Text style={[styles.summaryLabel, { color: colors.text, fontWeight: '700' }]}>Total:</Text>
+                      <Text style={[styles.totalAmount, { color: colors.primary }]}>
+                        KSH {selectedOrder.total.toLocaleString()}
+                      </Text>
                     </View>
-                    <Text style={[styles.summaryLabel, { color: colors.text, fontWeight: '700' }]}>Total:</Text>
-                    <Text style={[styles.totalAmount, { color: colors.primary }]}>
-                      KSH {selectedOrder.total.toLocaleString()}
-                    </Text>
                   </View>
-                </View>
-              </Card>
-            </LinearGradient>
+                </Card>
+              </LinearGradient>
+            )}
 
             {/* Progress Timeline */}
             <LinearGradient
