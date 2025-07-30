@@ -227,6 +227,7 @@ export default function BookServiceScreen() {
       address,
       phoneNumber,
       paymentMethod,
+      isPaid: paymentMethod !== 'cash',
       status: 'confirmed',
       orderType,
       createdAt: new Date().toISOString(),
