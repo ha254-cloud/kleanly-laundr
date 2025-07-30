@@ -7,6 +7,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import { ArrowLeft, User, Mail, Phone, MapPin, Save } from 'lucide-react-native';
@@ -50,66 +52,76 @@ export default function PersonalInfoScreen() {
         <View style={{ width: 24 }} />
       </LinearGradient>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <Card style={styles.formCard}>
-          <View style={styles.formHeader}>
-            <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
-              <User size={24} color={colors.primary} />
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        <ScrollView 
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
+        >
+          <Card style={styles.formCard}>
+            <View style={styles.formHeader}>
+              <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
+                <User size={24} color={colors.primary} />
+              </View>
+              <Text style={[styles.formTitle, { color: colors.text }]}>
+                Update Your Profile
+              </Text>
+              <Text style={[styles.formSubtitle, { color: colors.textSecondary }]}>
+                Keep your information up to date for better service
+              </Text>
             </View>
-            <Text style={[styles.formTitle, { color: colors.text }]}>
-              Update Your Profile
-            </Text>
-            <Text style={[styles.formSubtitle, { color: colors.textSecondary }]}>
-              Keep your information up to date for better service
-            </Text>
-          </View>
 
-          <Input
-            label="Full Name"
-            value={formData.name}
-            onChangeText={(text) => setFormData({ ...formData, name: text })}
-            placeholder="Enter your full name"
-            leftIcon={<User size={20} color={colors.textSecondary} />}
-          />
+            <Input
+              label="Full Name"
+              value={formData.name}
+              onChangeText={(text) => setFormData({ ...formData, name: text })}
+              placeholder="Enter your full name"
+              leftIcon={<User size={20} color={colors.textSecondary} />}
+            />
 
-          <Input
-            label="Email Address"
-            value={formData.email}
-            onChangeText={(text) => setFormData({ ...formData, email: text })}
-            placeholder="Enter your email"
-            keyboardType="email-address"
-            leftIcon={<Mail size={20} color={colors.textSecondary} />}
-            editable={false}
-          />
+            <Input
+              label="Email Address"
+              value={formData.email}
+              onChangeText={(text) => setFormData({ ...formData, email: text })}
+              placeholder="Enter your email"
+              keyboardType="email-address"
+              leftIcon={<Mail size={20} color={colors.textSecondary} />}
+              editable={false}
+            />
 
-          <Input
-            label="Phone Number"
-            value={formData.phone}
-            onChangeText={(text) => setFormData({ ...formData, phone: text })}
-            placeholder="+254 700 000 000"
-            keyboardType="phone-pad"
-            leftIcon={<Phone size={20} color={colors.textSecondary} />}
-          />
+            <Input
+              label="Phone Number"
+              value={formData.phone}
+              onChangeText={(text) => setFormData({ ...formData, phone: text })}
+              placeholder="+254 700 000 000"
+              keyboardType="phone-pad"
+              leftIcon={<Phone size={20} color={colors.textSecondary} />}
+            />
 
-          <Input
-            label="Default Address"
-            value={formData.address}
-            onChangeText={(text) => setFormData({ ...formData, address: text })}
-            placeholder="Enter your default delivery address"
-            leftIcon={<MapPin size={20} color={colors.textSecondary} />}
-          />
+            <Input
+              label="Default Address"
+              value={formData.address}
+              onChangeText={(text) => setFormData({ ...formData, address: text })}
+              placeholder="Enter your default delivery address"
+              leftIcon={<MapPin size={20} color={colors.textSecondary} />}
+            />
 
-          <LinearGradient
-            colors={[colors.primary, colors.primary + 'E6']}
-            style={styles.saveButtonGradient}
-          >
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-              <Save size={20} color="#FFFFFF" />
-              <Text style={styles.saveButtonText}>Save Changes</Text>
-            </TouchableOpacity>
-          </LinearGradient>
-        </Card>
-      </ScrollView>
+            <LinearGradient
+              colors={[colors.primary, colors.primary + 'E6']}
+              style={styles.saveButtonGradient}
+            >
+              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                <Save size={20} color="#FFFFFF" />
+                <Text style={styles.saveButtonText}>Save Changes</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </Card>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -117,6 +129,12 @@ export default function PersonalInfoScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   header: {
     flexDirection: 'row',

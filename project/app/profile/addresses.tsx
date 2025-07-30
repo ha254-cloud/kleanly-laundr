@@ -7,6 +7,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import { ArrowLeft, MapPin, Plus, Chrome as Home, Briefcase, CreditCard as Edit, Trash2 } from 'lucide-react-native';
@@ -95,62 +97,72 @@ export default function AddressesScreen() {
         </TouchableOpacity>
       </LinearGradient>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Manage your saved delivery addresses
-        </Text>
-
-        {addresses.map((address) => (
-          <Card key={address.id} style={styles.addressCard}>
-            <View style={styles.addressContent}>
-              <View style={styles.addressLeft}>
-                <View style={[styles.typeIcon, { backgroundColor: colors.primary + '20' }]}>
-                  {getTypeIcon(address.type)}
-                </View>
-                <View style={styles.addressInfo}>
-                  <View style={styles.addressHeader}>
-                    <Text style={[styles.addressLabel, { color: colors.text }]}>
-                      {address.label}
-                    </Text>
-                    {address.isDefault && (
-                      <View style={[styles.defaultBadge, { backgroundColor: colors.success }]}>
-                        <Text style={styles.defaultText}>DEFAULT</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={[styles.addressText, { color: colors.textSecondary }]}>
-                    {address.address}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.addressActions}>
-                <TouchableOpacity
-                  onPress={() => handleEditAddress(address.id)}
-                  style={[styles.actionButton, { backgroundColor: colors.primary + '20' }]}
-                >
-                  <Edit size={16} color={colors.primary} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleDeleteAddress(address.id)}
-                  style={[styles.actionButton, { backgroundColor: colors.error + '20' }]}
-                >
-                  <Trash2 size={16} color={colors.error} />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Card>
-        ))}
-
-        <LinearGradient
-          colors={[colors.primary, colors.primary + 'E6']}
-          style={styles.addButtonGradient}
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        <ScrollView 
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
         >
-          <TouchableOpacity style={styles.addNewButton} onPress={handleAddAddress}>
-            <Plus size={20} color="#FFFFFF" />
-            <Text style={styles.addNewButtonText}>Add New Address</Text>
-          </TouchableOpacity>
-        </LinearGradient>
-      </ScrollView>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Manage your saved delivery addresses
+          </Text>
+
+          {addresses.map((address) => (
+            <Card key={address.id} style={styles.addressCard}>
+              <View style={styles.addressContent}>
+                <View style={styles.addressLeft}>
+                  <View style={[styles.typeIcon, { backgroundColor: colors.primary + '20' }]}>
+                    {getTypeIcon(address.type)}
+                  </View>
+                  <View style={styles.addressInfo}>
+                    <View style={styles.addressHeader}>
+                      <Text style={[styles.addressLabel, { color: colors.text }]}>
+                        {address.label}
+                      </Text>
+                      {address.isDefault && (
+                        <View style={[styles.defaultBadge, { backgroundColor: colors.success }]}>
+                          <Text style={styles.defaultText}>DEFAULT</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={[styles.addressText, { color: colors.textSecondary }]}>
+                      {address.address}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.addressActions}>
+                  <TouchableOpacity
+                    onPress={() => handleEditAddress(address.id)}
+                    style={[styles.actionButton, { backgroundColor: colors.primary + '20' }]}
+                  >
+                    <Edit size={16} color={colors.primary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleDeleteAddress(address.id)}
+                    style={[styles.actionButton, { backgroundColor: colors.error + '20' }]}
+                  >
+                    <Trash2 size={16} color={colors.error} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Card>
+          ))}
+
+          <LinearGradient
+            colors={[colors.primary, colors.primary + 'E6']}
+            style={styles.addButtonGradient}
+          >
+            <TouchableOpacity style={styles.addNewButton} onPress={handleAddAddress}>
+              <Plus size={20} color="#FFFFFF" />
+              <Text style={styles.addNewButtonText}>Add New Address</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -158,6 +170,12 @@ export default function AddressesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   header: {
     flexDirection: 'row',
