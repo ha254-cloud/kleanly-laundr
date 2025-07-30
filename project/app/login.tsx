@@ -196,13 +196,13 @@ export default function LoginScreen() {
                     </View>
                     <View style={styles.featureDivider} />
                     <View style={styles.featureItem}>
-                      <Star size={14} color="rgba(255,255,255,0.9)" />
-                      <Text style={styles.featureText}>4.9★</Text>
+                      <Sparkles size={14} color="rgba(255,255,255,0.9)" />
+                      <Text style={styles.featureText}>Premium</Text>
                     </View>
                     <View style={styles.featureDivider} />
                     <View style={styles.featureItem}>
-                      <Sparkles size={14} color="rgba(255,255,255,0.9)" />
-                      <Text style={styles.featureText}>Premium</Text>
+                      <Shield size={14} color="rgba(255,255,255,0.9)" />
+                      <Text style={styles.featureText}>Secure</Text>
                     </View>
                   </View>
                 </View>
@@ -325,22 +325,22 @@ export default function LoginScreen() {
                 </View>
                 
                 <View style={styles.featureCard}>
-                  <View style={[styles.featureIcon, { backgroundColor: colors.warning + '20' }]}>
-                    <Star size={20} color={colors.warning} />
-                  </View>
-                  <Text style={[styles.featureTitle, { color: colors.text }]}>4.9★ Rating</Text>
-                  <Text style={[styles.featureDescription, { color: colors.textSecondary }]}>
-                    Loved by thousands of customers
-                  </Text>
-                </View>
-                
-                <View style={styles.featureCard}>
                   <View style={[styles.featureIcon, { backgroundColor: colors.primary + '20' }]}>
                     <Sparkles size={20} color={colors.primary} />
                   </View>
                   <Text style={[styles.featureTitle, { color: colors.text }]}>Premium Quality</Text>
                   <Text style={[styles.featureDescription, { color: colors.textSecondary }]}>
                     Professional cleaning standards
+                  </Text>
+                </View>
+                
+                <View style={styles.featureCard}>
+                  <View style={[styles.featureIcon, { backgroundColor: colors.success + '20' }]}>
+                    <Shield size={20} color={colors.success} />
+                  </View>
+                  <Text style={[styles.featureTitle, { color: colors.text }]}>Secure Service</Text>
+                  <Text style={[styles.featureDescription, { color: colors.textSecondary }]}>
+                    Safe & reliable laundry care
                   </Text>
                 </View>
               </View>
