@@ -218,7 +218,7 @@ export default function LoginScreen() {
                 <Card style={styles.formCard}>
                   <View style={styles.formHeader}>
                     <Text style={[styles.formTitle, { color: colors.text }]}>
-                      {isLogin ? '👋 Welcome Back' : '🎉 Join Kleanly'}
+                      {isLogin ? '  Welcome Back' : ' Join Kleanly'}
                     </Text>
                     <Text style={[styles.formSubtitle, { color: colors.textSecondary }]}>
                       {isLogin 
@@ -288,7 +288,7 @@ export default function LoginScreen() {
                       activeOpacity={0.9}
                     >
                       <Text style={styles.submitButtonText}>
-                        {isLogin ? '🚀 Sign In' : '✨ Create Account'}
+                        {isLogin ? '  Sign In' : ' Create Account'}
                       </Text>
                     </TouchableOpacity>
                   </LinearGradient>
