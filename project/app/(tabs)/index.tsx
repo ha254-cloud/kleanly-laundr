@@ -297,7 +297,7 @@ const CallToActionSection: React.FC<{ orders: any[]; colors: any }> = ({ orders,
           </Text>
           <LinearGradient
             colors={[colors.primary, colors.primary + 'F0', colors.primary + 'E6']}
-            start={{ x: 0, y: 0 }}
+            source={require('../../assets/images/space.jpg')}
             end={{ x: 1, y: 0 }}
             style={styles.ctaButtonGradient}
           >
