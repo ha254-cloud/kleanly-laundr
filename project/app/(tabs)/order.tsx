@@ -529,58 +529,6 @@ export default function BookingScreen() {
 
         {/* Service Items - Per Item */}
         {orderType === 'per-item' && (
-        <View style={styles.servicesSection}>
-          <Text style={[styles.servicesSectionTitle, { color: colors.text }]}>
-            Available Services
-          </Text>
-          {filteredServices.map((service) => {
-            const quantity = getItemQuantity(service.id);
-            const isInCart = quantity > 0;
-            function addToCart(service: any): void {
-              throw new Error('Function not implemented.');
-            }
-
-            function removeFromCart(id: any): void {
-              throw new Error('Function not implemented.');
-            }
-
-            return (
-              <TouchableOpacity
-                key={service.id}
-                activeOpacity={0.9}
-                onPress={() => addToCart(service)}
-              >
-                <Card style={[
-                  styles.serviceItem,
-                  isInCart && styles.serviceItemSelected,
-                  {
-                    borderColor: isInCart ? colors.primary : 'transparent',
-                    borderWidth: isInCart ? 2 : 0,
-                  }
-                ]}>
-                  <View style={styles.serviceContent}>
-                    <View style={styles.serviceInfo}>
-                      <Text style={[styles.serviceName, { color: colors.text }]}>
-                        {service.name}
-                      </Text>
-          {filteredServices.map((service) => {
-            const quantity = getItemQuantity(service.id);
-            const isInCart = quantity > 0;
-
-            return (
-              <TouchableOpacity
-                key={service.id}
-                activeOpacity={0.9}
-                onPress={() => addToCart(service)}
-              >
-                            {quantity}
-                          </Text>
-                        </View>
-                      )}
-                      <TouchableOpacity
-                        style={[styles.quantityButton, styles.addButton]}
-        {/* Service Items - Per Item */}
-        {orderType === 'per-item' && (
           <View style={styles.servicesSection}>
             <Text style={[styles.servicesSectionTitle, { color: colors.text }]}>
               Available Services
@@ -647,9 +595,6 @@ export default function BookingScreen() {
             })}
           </View>
         )}
-                      borderWidth: isInCart ? 2 : 0,
-                    }
-                  ]}>
         {/* Bag Services - Per Bag */}
         {orderType === 'per-bag' && (
           <View style={styles.servicesSection}>
