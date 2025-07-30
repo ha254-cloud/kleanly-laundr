@@ -765,22 +765,26 @@ export default function BookServiceScreen() {
       />
 
       {/* Success Modal */}
-      <OrderSuccessModal
-        visible={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
-        onViewReceipt={() => {
-          setShowSuccessModal(false);
-          setShowReceiptModal(true);
-        }}
-        orderData={currentOrder}
-      />
+      {currentOrder && (
+        <OrderSuccessModal
+          visible={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          onViewReceipt={() => {
+            setShowSuccessModal(false);
+            setShowReceiptModal(true);
+          }}
+          orderData={currentOrder}
+        />
+      )}
 
       {/* Receipt Modal */}
-      <ReceiptModal
-        visible={showReceiptModal}
-        onClose={() => setShowReceiptModal(false)}
-        order={currentOrder}
-      />
+      {currentOrder && (
+        <ReceiptModal
+          visible={showReceiptModal}
+          onClose={() => setShowReceiptModal(false)}
+          order={currentOrder}
+        />
+      )}
 
       {/* WhatsApp Support Button */}
       <WhatsAppButton />
