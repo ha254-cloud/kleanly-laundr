@@ -116,7 +116,7 @@ export default function BookServiceScreen() {
   const { isDark } = useTheme();
   const colors = isDark ? Colors.dark : Colors.light;
   const { user } = useAuth();
-  const { addOrder } = useOrders();
+  const { createOrder: createOrderContext } = useOrders();
   
   const [orderType, setOrderType] = useState<'per-item' | 'per-bag'>('per-item');
   const [selectedCategory, setSelectedCategory] = useState<string>('wash-fold');
@@ -242,7 +242,7 @@ export default function BookServiceScreen() {
       };
 
       // Create order in database
-      const orderId = await createOrder(orderData);
+      const orderId = await createOrderContext(orderData);
 
       // Create detailed order object for modals
       const detailedOrder = {
@@ -330,39 +330,6 @@ export default function BookServiceScreen() {
   const handleCloseReceipt = () => {
     setShowReceiptModal(false);
     setOrderStep('cart');
-  };
-
-  const createOrder = async (orderData: any) => {
-    const order = {
-      id: Date.now().toString(),
-      userId: user?.id || 'guest',
-      items: orderType === 'per-item' ? cart : bagCart,
-      total: getCartTotal(),
-      address,
-      phoneNumber,
-      paymentMethod: 'cash',
-      isPaid: false,
-      status: 'confirmed',
-      orderType,
-      createdAt: new Date().toISOString(),
-      estimatedDelivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days from now
-    };
-
-    addOrder(order);
-    setCurrentOrder(order);
-    setShowPaymentModal(false);
-    setShowSuccessModal(true);
-
-    // Clear cart
-    if (orderType === 'per-item') {
-      setCart([]);
-    } else {
-      setBagCart([]);
-    }
-    setAddress('');
-    setPhoneNumber('');
-    
-    return order.id;
   };
 
   const filteredServices = services.filter(service => service.category === selectedCategory);
