@@ -22,10 +22,12 @@ import { useOrders } from '../../context/OrderContext';
 import { Colors } from '../../constants/Colors';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { PaymentSelectionModal } from '../../components/PaymentSelectionModal';
-import { OrderSuccessModal } from '../../components/OrderSuccessModal';
+import { PaymentModal } from '../../components/PaymentModal';
+import { OrderConfirmationModal } from '../../components/OrderConfirmationModal';
 import { ReceiptModal } from '../../components/ReceiptModal';
 import { WhatsAppButton } from '../../components/ui/WhatsAppButton';
+import { orderService } from '../../services/orderService';
+import { notificationService } from '../../services/notificationService';
 
 const { width } = Dimensions.get('window');
 
@@ -126,6 +128,7 @@ export default function BookServiceScreen() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<any>(null);
+  const [orderStep, setOrderStep] = useState<'cart' | 'payment' | 'processing' | 'confirmed'>('cart');
 
   const addToCart = (service: ServiceItem) => {
     setCart(prev => {
@@ -215,10 +218,119 @@ export default function BookServiceScreen() {
       return;
     }
 
+    setOrderStep('payment');
     setShowPaymentModal(true);
   };
 
-  const handlePaymentComplete = (paymentMethod: string) => {
+  const handlePaymentComplete = async (paymentMethod: string, paymentDetails?: any) => {
+    setOrderStep('processing');
+    setShowPaymentModal(false);
+
+    try {
+      // Create order data
+      const orderData = {
+        category: selectedCategory,
+        date: new Date().toISOString().split('T')[0],
+        address: address.trim(),
+        status: 'pending' as const,
+        items: orderType === 'per-item' 
+          ? cart.map(item => `${item.name} (${item.quantity})`)
+          : bagCart.map(item => `${item.name} (${item.quantity})`),
+        total: getCartTotal(),
+        pickupTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
+        notes: `Order Type: ${orderType}, Phone: ${phoneNumber}, Payment: ${paymentMethod}`,
+      };
+
+      // Create order in database
+      const orderId = await createOrder(orderData);
+
+      // Create detailed order object for modals
+      const detailedOrder = {
+        id: orderId,
+        service: selectedCategory.replace('-', ' ').toUpperCase(),
+        items: orderType === 'per-item' 
+          ? cart.map(item => ({ name: item.name, quantity: item.quantity, price: item.price }))
+          : bagCart.map(item => ({ name: item.name, quantity: item.quantity, price: item.price })),
+        total: getCartTotal(),
+        area: address.trim(),
+        phone: phoneNumber,
+        pickupTime: 'Tomorrow, 9:00 AM - 5:00 PM',
+        paymentMethod,
+        status: 'pending',
+        isPaid: paymentMethod !== 'cash',
+        orderType,
+        createdAt: new Date().toISOString(),
+      };
+
+      setCurrentOrder(detailedOrder);
+      
+      // Send confirmation notification
+      await notificationService.sendLocalNotification({
+        orderId,
+        type: 'order_assigned',
+        title: '🎉 Order Confirmed!',
+        body: `Your ${selectedCategory.replace('-', ' ')} order has been confirmed. We'll pickup your items tomorrow.`,
+      });
+
+      // Clear cart and form
+      if (orderType === 'per-item') {
+        setCart([]);
+      } else {
+        setBagCart([]);
+      }
+      setAddress('');
+      setPhoneNumber('');
+      
+      setOrderStep('confirmed');
+      setShowSuccessModal(true);
+
+    } catch (error) {
+      console.error('Error creating order:', error);
+      Alert.alert(
+        'Order Failed', 
+        'There was an error creating your order. Please try again.',
+        [
+          { 
+            text: 'OK', 
+            onPress: () => {
+              setOrderStep('payment');
+              setShowPaymentModal(true);
+            }
+          }
+        ]
+      );
+    }
+  };
+
+  const handleOrderSuccess = () => {
+    setShowSuccessModal(false);
+    setOrderStep('cart');
+    // Navigate to tracking screen
+    Alert.alert(
+      'Track Your Order',
+      'Would you like to track your order now?',
+      [
+        { text: 'Later', style: 'cancel' },
+        { 
+          text: 'Track Now', 
+          onPress: () => {
+            // Navigate to track screen with order ID
+            // router.push(`/(tabs)/track?orderId=${currentOrder?.id}`);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleViewReceipt = () => {
+    setShowSuccessModal(false);
+    setShowReceiptModal(true);
+  };
+
+  const handleCloseReceipt = () => {
+    setShowReceiptModal(false);
+    setOrderStep('cart');
+  };
     const order = {
       id: Date.now().toString(),
       userId: user?.id || 'guest',
@@ -757,23 +869,20 @@ export default function BookServiceScreen() {
       </KeyboardAvoidingView>
 
       {/* Payment Modal */}
-      <PaymentSelectionModal
+      <PaymentModal
         visible={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
-        onPaymentSelect={handlePaymentComplete}
         total={getCartTotal()}
+        onPaymentComplete={handlePaymentComplete}
       />
 
       {/* Success Modal */}
       {currentOrder && (
-        <OrderSuccessModal
+        <OrderConfirmationModal
           visible={showSuccessModal}
-          onClose={() => setShowSuccessModal(false)}
-          onViewReceipt={() => {
-            setShowSuccessModal(false);
-            setShowReceiptModal(true);
-          }}
-          orderData={currentOrder}
+          onClose={handleOrderSuccess}
+          orderDetails={currentOrder}
+          onViewReceipt={handleViewReceipt}
         />
       )}
 
@@ -781,8 +890,18 @@ export default function BookServiceScreen() {
       {currentOrder && (
         <ReceiptModal
           visible={showReceiptModal}
-          onClose={() => setShowReceiptModal(false)}
-          order={currentOrder}
+          onClose={handleCloseReceipt}
+          orderData={{
+            orderId: currentOrder.id,
+            service: currentOrder.service,
+            items: currentOrder.items.map((item: any) => item.name),
+            total: currentOrder.total,
+            area: currentOrder.area,
+            phone: currentOrder.phone,
+            pickupTime: currentOrder.pickupTime,
+            paymentMethod: currentOrder.paymentMethod,
+            isPaid: currentOrder.isPaid,
+          }}
         />
       )}
 

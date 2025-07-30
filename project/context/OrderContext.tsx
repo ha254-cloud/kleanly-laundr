@@ -48,6 +48,21 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
       };
       
       setOrders(prev => [newOrder, ...prev]);
+      
+      // Send order created notification
+      try {
+        await import('../services/notificationService').then(({ notificationService }) => {
+          notificationService.sendLocalNotification({
+            orderId,
+            type: 'order_assigned',
+            title: 'Order Created Successfully! 🎉',
+            body: `Your ${orderData.category.replace('-', ' ')} order has been placed and is being processed.`,
+          });
+        });
+      } catch (notificationError) {
+        console.log('Notification service not available:', notificationError);
+      }
+      
       return orderId; // Return the order ID
     } catch (error) {
       throw error;
