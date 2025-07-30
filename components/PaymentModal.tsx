@@ -12,7 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { X, CreditCard, Smartphone, Banknote, Shield, Clock, CheckCircle, AlertCircle, Info } from 'lucide-react-native';
+import { X, CreditCard, Smartphone, Banknote, Shield, Clock, CheckCircle, AlertCircle, Info, ArrowRight } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { Colors } from '../constants/Colors';
@@ -42,10 +42,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [processing, setProcessing] = useState(false);
   const [step, setStep] = useState<'select' | 'details' | 'processing' | 'success'>('select');
   const [countdown, setCountdown] = useState(300); // 5 minutes for M-Pesa
-  const [showSecurityInfo, setShowSecurityInfo] = useState(false);
   
   const slideAnimation = new Animated.Value(0);
-  const fadeAnimation = new Animated.Value(1);
 
   useEffect(() => {
     if (visible) {
@@ -114,6 +112,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     }
     
     setSelectedMethod(methodId);
+    
+    // Auto-proceed based on method
+    if (methodId === 'cash') {
+      setTimeout(() => {
+        setStep('processing');
+        handleCashPayment();
+      }, 500);
+    } else if (methodId === 'mpesa') {
+      setTimeout(() => {
+        setStep('details');
+      }, 300);
+    }
   };
 
   const handleCashPayment = () => {
@@ -172,15 +182,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         ]
       );
     }, 2000);
-  };
-
-  const handleContinue = () => {
-    if (selectedMethod === 'cash') {
-      setStep('processing');
-      handleCashPayment();
-    } else if (selectedMethod === 'mpesa') {
-      setStep('details');
-    }
   };
 
   const resetModal = () => {
@@ -272,11 +273,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                           <Text style={styles.comingSoonText}>COMING SOON</Text>
                         </View>
                       )}
-                      {selectedMethod === method.id && (
-                        <View style={[styles.selectedBadge, { backgroundColor: colors.success }]}>
-                          <Text style={styles.selectedText}>SELECTED</Text>
-                        </View>
-                      )}
                     </View>
                     <Text style={[styles.methodSubtitle, { color: colors.textSecondary }]}>
                       {method.subtitle}
@@ -321,40 +317,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           </TouchableOpacity>
         ))}
 
-        <TouchableOpacity
-          style={[styles.securityInfo, { backgroundColor: colors.primary + '10' }]}
-          onPress={() => setShowSecurityInfo(true)}
-        >
+        <View style={[styles.securityInfo, { backgroundColor: colors.primary + '10' }]}>
           <Shield size={20} color={colors.primary} />
           <Text style={[styles.securityText, { color: colors.primary }]}>
             Your payments are secured with 256-bit encryption
           </Text>
           <Info size={16} color={colors.primary} />
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* Fixed Continue Button */}
-      {selectedMethod && (
-        <View style={styles.fixedButtonContainer}>
-          <LinearGradient
-            colors={[colors.primary, colors.primary + 'E6']}
-            style={styles.continueButtonGradient}
-          >
-            <TouchableOpacity
-              style={styles.continueButton}
-              onPress={handleContinue}
-              activeOpacity={0.9}
-            >
-              <CheckCircle size={20} color="#FFFFFF" />
-              <Text style={styles.continueButtonText}>
-                {selectedMethod === 'cash' ? 'Confirm Order' : 
-                 selectedMethod === 'mpesa' ? 'Continue with M-Pesa' : 
-                 'Continue'}
-              </Text>
-            </TouchableOpacity>
-          </LinearGradient>
         </View>
-      )}
+      </ScrollView>
     </View>
   );
 
@@ -535,7 +505,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   return (
     <Modal
       visible={visible}
-      animationType="none"
+      animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
@@ -569,7 +539,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   outputRange: [50, 0],
                 })
               }],
-              opacity: fadeAnimation,
             }
           ]}
         >
@@ -578,39 +547,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           {step === 'processing' && renderProcessing()}
           {step === 'success' && renderSuccess()}
         </Animated.View>
-
-        {/* Security Info Modal */}
-        <Modal
-          visible={showSecurityInfo}
-          animationType="fade"
-          transparent
-          onRequestClose={() => setShowSecurityInfo(false)}
-        >
-          <View style={styles.securityModalOverlay}>
-            <Card style={styles.securityModal}>
-              <View style={styles.securityModalHeader}>
-                <Shield size={24} color={colors.primary} />
-                <Text style={[styles.securityModalTitle, { color: colors.text }]}>
-                  Payment Security
-                </Text>
-                <TouchableOpacity onPress={() => setShowSecurityInfo(false)}>
-                  <X size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
-              <Text style={[styles.securityModalText, { color: colors.textSecondary }]}>
-                • All payments are encrypted with 256-bit SSL{'\n'}
-                • We never store your payment information{'\n'}
-                • M-Pesa payments are processed securely through Safaricom{'\n'}
-                • Your data is protected by industry-standard security measures
-              </Text>
-              <Button
-                title="Got it"
-                onPress={() => setShowSecurityInfo(false)}
-                style={styles.securityModalButton}
-              />
-            </Card>
-          </View>
-        </Modal>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -667,7 +603,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: 20,
+    paddingBottom: 120,
   },
   headerSection: {
     alignItems: 'center',
@@ -768,16 +704,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
   },
-  selectedBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  selectedText: {
-    color: '#FFFFFF',
-    fontSize: 9,
-    fontWeight: '700',
-  },
   methodSubtitle: {
     fontSize: 14,
     marginBottom: 6,
@@ -798,12 +724,6 @@ const styles = StyleSheet.create({
   },
   methodDetailText: {
     fontSize: 11,
-  },
-  methodArrow: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   methodAction: {
     alignItems: 'center',
@@ -832,20 +752,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  radioButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioButtonInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FFFFFF',
-  },
   securityInfo: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -858,18 +764,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-  },
-  fixedButtonContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    paddingBottom: 32,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.1)',
   },
   
   // M-Pesa Details Styles
@@ -931,6 +825,18 @@ const styles = StyleSheet.create({
   stepText: {
     fontSize: 14,
     flex: 1,
+  },
+  fixedButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.light.background,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingBottom: 32,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.1)',
   },
   actionButtons: {
     flexDirection: 'row',
@@ -1061,61 +967,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
-  },
-  
-  // Security Modal Styles
-  securityModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  securityModal: {
-    width: '100%',
-    maxWidth: 400,
-    padding: 24,
-  },
-  securityModalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 12,
-  },
-  securityModalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    flex: 1,
-  },
-  securityModalText: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 20,
-  },
-  securityModalButton: {
-    marginTop: 8,
-  },
-  
-  // Continue Button Styles
-  continueButtonGradient: {
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  continueButton: {
-    paddingVertical: 18,
-    paddingHorizontal: 32,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  continueButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
   },
 });
