@@ -208,7 +208,6 @@ export default function LoginScreen() {
         </KeyboardAvoidingView>
       </ImageBackground>
     </SafeAreaView>
-  );
 }
 
 const styles = StyleSheet.create({
