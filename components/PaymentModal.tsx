@@ -114,13 +114,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     }
     
     setSelectedMethod(methodId);
-    
-    if (methodId === 'cash') {
-      setStep('processing');
-      handleCashPayment();
-    } else {
-      setStep('details');
-    }
   };
 
   const handleCashPayment = () => {
@@ -187,12 +180,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       handleCashPayment();
     } else if (selectedMethod === 'mpesa') {
       setStep('details');
-    } else if (selectedMethod === 'card') {
-      Alert.alert(
-        'Coming Soon',
-        'Card payments will be available in the next update. Please use M-Pesa or Cash on Pickup for now.',
-        [{ text: 'OK' }]
-      );
     }
   };
 
@@ -256,7 +243,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 opacity: method.disabled ? 0.6 : 1,
               },
             ]}
-            onPress={() => !method.disabled && setSelectedMethod(method.id)}
+            onPress={() => !method.disabled && handleMethodSelect(method.id)}
             disabled={method.disabled}
             activeOpacity={0.8}
           >
@@ -313,20 +300,21 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     </View>
                   </View>
                 </View>
-                <View style={styles.methodArrow}>
-                  <View
-                    style={[
-                      styles.radioButton,
-                      {
-                        borderColor: selectedMethod === method.id ? method.color : colors.border,
-                        backgroundColor: selectedMethod === method.id ? method.color : 'transparent',
-                      },
-                    ]}
-                  >
-                    {selectedMethod === method.id && (
-                      <View style={styles.radioButtonInner} />
-                    )}
-                  </View>
+                <View style={styles.methodAction}>
+                  {selectedMethod === method.id ? (
+                    <LinearGradient
+                      colors={[method.color, method.color + 'E6']}
+                      style={styles.selectedIndicator}
+                    >
+                      <CheckCircle size={20} color="#FFFFFF" />
+                    </LinearGradient>
+                  ) : (
+                    <View style={[styles.selectButton, { borderColor: method.color + '40' }]}>
+                      <Text style={[styles.selectButtonText, { color: method.color }]}>
+                        Select
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
             </LinearGradient>
@@ -357,6 +345,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               onPress={handleContinue}
               activeOpacity={0.9}
             >
+              <CheckCircle size={20} color="#FFFFFF" />
               <Text style={styles.continueButtonText}>
                 {selectedMethod === 'cash' ? 'Confirm Order' : 
                  selectedMethod === 'mpesa' ? 'Continue with M-Pesa' : 
@@ -816,6 +805,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  methodAction: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedIndicator: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  selectButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    backgroundColor: 'transparent',
+  },
+  selectButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
   radioButton: {
     width: 20,
     height: 20,
@@ -1092,8 +1108,10 @@ const styles = StyleSheet.create({
   continueButton: {
     paddingVertical: 18,
     paddingHorizontal: 32,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 12,
   },
   continueButtonText: {
     color: '#FFFFFF',
