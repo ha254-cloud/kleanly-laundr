@@ -235,7 +235,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               opacity: method.disabled ? 0.6 : 1,
             },
           ]}
-          onPress={() => !method.disabled && handleMethodSelect(method.id)}
+          onPress={() => !method.disabled && setSelectedMethod(method.id)}
           disabled={method.disabled}
           activeOpacity={0.8}
         >
@@ -293,6 +293,39 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           </LinearGradient>
         </TouchableOpacity>
       ))}
+
+      {/* Continue Button */}
+      {selectedMethod && (
+        <LinearGradient
+          colors={[colors.primary, colors.primary + 'E6']}
+          style={styles.continueButtonGradient}
+        >
+          <TouchableOpacity
+            style={styles.continueButton}
+            onPress={() => {
+              if (selectedMethod === 'cash') {
+                setStep('processing');
+                handleCashPayment();
+              } else if (selectedMethod === 'mpesa') {
+                setStep('details');
+              } else if (selectedMethod === 'card') {
+                Alert.alert(
+                  'Coming Soon',
+                  'Card payments will be available in the next update. Please use M-Pesa or Cash on Pickup for now.',
+                  [{ text: 'OK' }]
+                );
+              }
+            }}
+            activeOpacity={0.9}
+          >
+            <Text style={styles.continueButtonText}>
+              {selectedMethod === 'cash' ? 'Confirm Order' : 
+               selectedMethod === 'mpesa' ? 'Continue with M-Pesa' : 
+               'Continue'}
+            </Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      )}
 
       <TouchableOpacity
         style={[styles.securityInfo, { backgroundColor: colors.primary + '10' }]}
@@ -601,8 +634,8 @@ const styles = StyleSheet.create({
   
   // Method Selection Styles
   methodsContainer: {
-    flex: 1,
     padding: 20,
+    paddingBottom: 100,
   },
   headerSection: {
     alignItems: 'center',
@@ -751,8 +784,8 @@ const styles = StyleSheet.create({
   
   // M-Pesa Details Styles
   detailsContainer: {
-    flex: 1,
     padding: 20,
+    paddingBottom: 100,
   },
   mpesaCard: {
     padding: 24,
@@ -813,8 +846,10 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 'auto',
-    paddingBottom: 20,
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
   },
   backButton: {
     flex: 1,
@@ -974,5 +1009,28 @@ const styles = StyleSheet.create({
   },
   securityModalButton: {
     marginTop: 8,
+  },
+  
+  // Continue Button Styles
+  continueButtonGradient: {
+    borderRadius: 16,
+    marginTop: 24,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  continueButton: {
+    paddingVertical: 18,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  continueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
   },
 });
