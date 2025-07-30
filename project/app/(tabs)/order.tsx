@@ -331,6 +331,8 @@ export default function BookServiceScreen() {
     setShowReceiptModal(false);
     setOrderStep('cart');
   };
+
+  const createOrder = async (orderData: any) => {
     const order = {
       id: Date.now().toString(),
       userId: user?.id || 'guest',
@@ -338,8 +340,8 @@ export default function BookServiceScreen() {
       total: getCartTotal(),
       address,
       phoneNumber,
-      paymentMethod,
-      isPaid: paymentMethod !== 'cash',
+      paymentMethod: 'cash',
+      isPaid: false,
       status: 'confirmed',
       orderType,
       createdAt: new Date().toISOString(),
@@ -359,6 +361,8 @@ export default function BookServiceScreen() {
     }
     setAddress('');
     setPhoneNumber('');
+    
+    return order.id;
   };
 
   const filteredServices = services.filter(service => service.category === selectedCategory);
@@ -872,17 +876,20 @@ export default function BookServiceScreen() {
       <PaymentModal
         visible={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
+        onPaymentSelect={handlePaymentComplete}
         total={getCartTotal()}
-        onPaymentComplete={handlePaymentComplete}
       />
 
       {/* Success Modal */}
       {currentOrder && (
         <OrderConfirmationModal
           visible={showSuccessModal}
-          onClose={handleOrderSuccess}
-          orderDetails={currentOrder}
-          onViewReceipt={handleViewReceipt}
+          onClose={() => setShowSuccessModal(false)}
+          onViewReceipt={() => {
+            setShowSuccessModal(false);
+            setShowReceiptModal(true);
+          }}
+          orderData={currentOrder}
         />
       )}
 
@@ -890,18 +897,8 @@ export default function BookServiceScreen() {
       {currentOrder && (
         <ReceiptModal
           visible={showReceiptModal}
-          onClose={handleCloseReceipt}
-          orderData={{
-            orderId: currentOrder.id,
-            service: currentOrder.service,
-            items: currentOrder.items.map((item: any) => item.name),
-            total: currentOrder.total,
-            area: currentOrder.area,
-            phone: currentOrder.phone,
-            pickupTime: currentOrder.pickupTime,
-            paymentMethod: currentOrder.paymentMethod,
-            isPaid: currentOrder.isPaid,
-          }}
+          onClose={() => setShowReceiptModal(false)}
+          order={currentOrder}
         />
       )}
 
