@@ -311,42 +311,6 @@ export default function LoginScreen() {
             </View>
 
             {/* Features Section */}
-            <View style={styles.featuresSection}>
-              <Text style={styles.featuresSectionTitle}>Why Choose Kleanly?</Text>
-              <View style={styles.featuresList}>
-                <View style={styles.featureCard}>
-                  <View style={[styles.featureIcon, { backgroundColor: colors.success + '20' }]}>
-                    <Shield size={20} color={colors.success} />
-                  </View>
-                  <Text style={[styles.featureTitle, { color: colors.text }]}>Trusted Service</Text>
-                  <Text style={[styles.featureDescription, { color: colors.textSecondary }]}>
-                    Secure & reliable laundry care
-                  </Text>
-                </View>
-                
-                <View style={styles.featureCard}>
-                  <View style={[styles.featureIcon, { backgroundColor: colors.primary + '20' }]}>
-                    <Sparkles size={20} color={colors.primary} />
-                  </View>
-                  <Text style={[styles.featureTitle, { color: colors.text }]}>Premium Quality</Text>
-                  <Text style={[styles.featureDescription, { color: colors.textSecondary }]}>
-                    Professional cleaning standards
-                  </Text>
-                </View>
-                
-                <View style={styles.featureCard}>
-                  <View style={[styles.featureIcon, { backgroundColor: colors.success + '20' }]}>
-                    <Shield size={20} color={colors.success} />
-                  </View>
-                  <Text style={[styles.featureTitle, { color: colors.text }]}>Secure Service</Text>
-                  <Text style={[styles.featureDescription, { color: colors.textSecondary }]}>
-                    Safe & reliable laundry care
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </Animated.ScrollView>
-        </KeyboardAvoidingView>
       </ImageBackground>
     </SafeAreaView>
   );
@@ -542,55 +506,5 @@ const styles = StyleSheet.create({
   switchButtonText: {
     fontSize: 15,
     fontWeight: '600',
-  },
-  
-  // Features Section
-  featuresSection: {
-    paddingHorizontal: 20,
-    paddingTop: 40,
-  },
-  featuresSectionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 24,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  featuresList: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  featureCard: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    padding: 20,
-    borderRadius: 20,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  featureIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  featureTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 6,
-    color: '#FFFFFF',
-  },
-  featureDescription: {
-    fontSize: 12,
-    textAlign: 'center',
-    lineHeight: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
   },
 });
