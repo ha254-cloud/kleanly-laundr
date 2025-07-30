@@ -772,7 +772,7 @@ export default function BookServiceScreen() {
           setShowSuccessModal(false);
           setShowReceiptModal(true);
         }}
-        order={currentOrder}
+        orderData={currentOrder}
       />
 
       {/* Receipt Modal */}
