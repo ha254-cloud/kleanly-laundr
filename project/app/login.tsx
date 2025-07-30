@@ -311,6 +311,8 @@ export default function LoginScreen() {
             </View>
 
             {/* Features Section */}
+          </Animated.ScrollView>
+        </KeyboardAvoidingView>
       </ImageBackground>
     </SafeAreaView>
   );
