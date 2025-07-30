@@ -6,6 +6,7 @@ import {
   Dimensions,
   Alert,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { MapPin, Navigation, Phone, MessageCircle, Clock, Package } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,6 +15,10 @@ import { Colors } from '../constants/Colors';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { driverService, DeliveryTracking, Driver } from '../services/driverService';
+import GoogleMapComponent from './GoogleMapComponent';
+import { LocationCoords, mapsService } from '../services/mapsService';
+import { locationService } from '../services/locationService';
+import { notificationService } from '../services/notificationService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -34,8 +39,14 @@ export const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
   const [driver, setDriver] = useState<Driver | null>(null);
   const [loading, setLoading] = useState(true);
   const unsubscribeRef = useRef<(() => void) | null>(null);
+  const [customerLocation, setCustomerLocation] = useState<LocationCoords | null>(null);
+  const [pickupLocation, setPickupLocation] = useState<LocationCoords | null>(null);
+  const [eta, setEta] = useState<string>('');
+  const [distance, setDistance] = useState<string>('');
+  const [lastNotificationTime, setLastNotificationTime] = useState<number>(0);
 
   useEffect(() => {
+    initializeLocations();
     // Subscribe to real-time tracking updates
     const unsubscribe = driverService.subscribeToDeliveryTracking(orderId, async (trackingData) => {
       setTracking(trackingData);
@@ -53,6 +64,9 @@ export const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
     });
 
     unsubscribeRef.current = unsubscribe;
+    
+    // Initialize notifications
+    notificationService.initialize();
 
     return () => {
       if (unsubscribeRef.current) {
@@ -60,6 +74,57 @@ export const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
       }
     };
   }, [orderId]);
+
+  const initializeLocations = async () => {
+    try {
+      // Geocode customer address
+      if (tracking?.customerAddress) {
+        const customerCoords = await mapsService.geocodeAddress(tracking.customerAddress);
+        if (customerCoords) {
+          setCustomerLocation(customerCoords);
+        }
+      }
+
+      // Set pickup location (could be laundromat address)
+      const pickupCoords = await mapsService.geocodeAddress('123 Laundry St, City, State');
+      if (pickupCoords) {
+        setPickupLocation(pickupCoords);
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error initializing locations:', error);
+      setLoading(false);
+    }
+  };
+
+  // Update ETA when driver location changes
+  useEffect(() => {
+    if (tracking?.currentLocation && customerLocation) {
+      updateETA();
+    }
+  }, [tracking?.currentLocation, customerLocation]);
+
+  const updateETA = async () => {
+    if (!tracking?.currentLocation || !customerLocation) return;
+
+    try {
+      const etaInfo = await mapsService.calculateETA(tracking.currentLocation, customerLocation);
+      if (etaInfo) {
+        setEta(etaInfo.duration);
+        setDistance(etaInfo.distance);
+        
+        // Send ETA notification if significant change (every 5 minutes max)
+        const now = Date.now();
+        if (now - lastNotificationTime > 300000) { // 5 minutes
+          await notificationService.sendETAUpdateNotification(orderId, etaInfo.duration);
+          setLastNotificationTime(now);
+        }
+      }
+    } catch (error) {
+      console.error('Error calculating ETA:', error);
+    }
+  };
 
   const getStatusDisplay = (status: DeliveryTracking['status']) => {
     switch (status) {
@@ -116,6 +181,7 @@ export const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>
             Loading tracking information...
           </Text>
@@ -140,24 +206,31 @@ export const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
     );
   }
 
+  if (!customerLocation) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.errorContainer}>
+          <MapPin size={48} color={colors.textSecondary} />
+          <Text style={[styles.errorText, { color: colors.textSecondary }]}>Unable to load location</Text>
+        </View>
+      </View>
+    );
+  }
+
   const statusInfo = getStatusDisplay(tracking.status);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Map Placeholder */}
-      <View style={[styles.mapContainer, { backgroundColor: colors.surface }]}>
-        <LinearGradient
-          colors={[colors.primary + '20', colors.primary + '10']}
-          style={styles.mapPlaceholder}
-        >
-          <MapPin size={48} color={colors.primary} />
-          <Text style={[styles.mapPlaceholderText, { color: colors.primary }]}>
-            Live Map Integration
-          </Text>
-          <Text style={[styles.mapPlaceholderSubtext, { color: colors.textSecondary }]}>
-            Google Maps integration would show real-time driver location here
-          </Text>
-        </LinearGradient>
+      {/* Map Component */}
+      <View style={styles.mapContainer}>
+        <GoogleMapComponent
+          driverLocation={tracking.currentLocation || undefined}
+          customerLocation={customerLocation}
+          pickupLocation={pickupLocation || undefined}
+          showRoute={true}
+          mapHeight={height * 0.4}
+          zoom={14}
+        />
       </View>
 
       {/* Status Card */}
@@ -177,9 +250,14 @@ export const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
               <View style={styles.timeContainer}>
                 <Clock size={16} color={colors.textSecondary} />
                 <Text style={[styles.timeText, { color: colors.textSecondary }]}>
-                  ETA: {getEstimatedTime()}
+                  ETA: {eta || getEstimatedTime()}
                 </Text>
               </View>
+              {distance && (
+                <Text style={[styles.distanceText, { color: colors.textSecondary }]}>
+                  Distance: {distance}
+                </Text>
+              )}
             </View>
           </View>
         </LinearGradient>
@@ -314,6 +392,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     textAlign: 'center',
+    marginTop: 12,
   },
   noTrackingCard: {
     margin: 20,
@@ -331,6 +410,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 12,
   },
   mapContainer: {
     height: height * 0.4,
@@ -393,6 +483,10 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 14,
+  },
+  distanceText: {
+    fontSize: 12,
+    marginTop: 1,
   },
   driverCard: {
     marginHorizontal: 20,
