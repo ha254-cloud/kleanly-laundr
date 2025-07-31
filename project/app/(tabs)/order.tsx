@@ -10,7 +10,10 @@ import {
   Image,
   Dimensions,
   StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { Plus, Minus, ShoppingCart, MapPin, Clock, Phone, Sparkles, Package2, Info, Calendar } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../context/ThemeContext';
@@ -19,10 +22,12 @@ import { useOrders } from '../../context/OrderContext';
 import { Colors } from '../../constants/Colors';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { PaymentSelectionModal } from '../../components/PaymentSelectionModal';
-import { OrderSuccessModal } from '../../components/OrderSuccessModal';
+import { PaymentModal } from '../../components/PaymentModal';
+import { OrderConfirmationModal } from '../../components/OrderConfirmationModal';
 import { ReceiptModal } from '../../components/ReceiptModal';
 import { WhatsAppButton } from '../../components/ui/WhatsAppButton';
+import { orderService } from '../../services/orderService';
+import { notificationService } from '../../services/notificationService';
 
 const { width } = Dimensions.get('window');
 
@@ -108,6 +113,7 @@ const serviceCategories: ServiceCategory[] = [
   { id: 'ironing', name: 'Ironing', image: ironingImg },
   { id: 'shoe-cleaning', name: 'Shoe Cleaning', image: shoeCleaningImg },
 ];
+<<<<<<< HEAD
 // (Removed duplicate styles declaration here)
 
 // Scent options for Kenya
@@ -122,55 +128,37 @@ const scentOptions = [
   'Eucalyptus',
   'Coconut',
 ];
+=======
+>>>>>>> 25cf15df486901cc88cd31a4462ceb622ce067eb
 
-export default function BookingScreen() {
+export default function BookServiceScreen() {
   const { isDark } = useTheme();
-  // const { user } = useAuth();
-  const { createOrder } = useOrders();
   const colors = isDark ? Colors.dark : Colors.light;
-
-  // Admin passkey state
-  const [adminPasskey, setAdminPasskey] = useState('');
-  const [adminAccess, setAdminAccess] = useState(false);
-
-  // Selected category state
-  const [selectedCategory, setSelectedCategory] = useState(serviceCategories[0].id);
-
-  // Order/cart state
+  const { user } = useAuth();
+  const { createOrder: createOrderContext } = useOrders();
+  
   const [orderType, setOrderType] = useState<'per-item' | 'per-bag'>('per-item');
+  const [selectedCategory, setSelectedCategory] = useState<string>('wash-fold');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [bagCart, setBagCart] = useState<BagCartItem[]>([]);
-  const [area, setArea] = useState('');
-  const [phone, setPhone] = useState('');
-  const [pickupTime, setPickupTime] = useState('');
-  const [deliveryTime, setDeliveryTime] = useState('');
-  const [pickupDate, setPickupDate] = useState('');
-  const [deliveryDate, setDeliveryDate] = useState('');
+  const [address, setAddress] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+<<<<<<< HEAD
   const [orderData, setOrderData] = useState<any>(null);
   const [selectedScents, setSelectedScents] = useState<string[]>([]);
+=======
+  const [currentOrder, setCurrentOrder] = useState<any>(null);
+  const [orderStep, setOrderStep] = useState<'cart' | 'payment' | 'processing' | 'confirmed'>('cart');
+>>>>>>> 25cf15df486901cc88cd31a4462ceb622ce067eb
 
-  // Filtered services by selected category
-  const filteredServices = services.filter(s => s.category === selectedCategory);
-  const filteredBagServices = bagServices.filter(s => s.category === selectedCategory);
-
-  const handleAdminLogin = () => {
-    if (adminPasskey === '12110') {
-      setAdminAccess(true);
-      Alert.alert('Admin Access Granted', 'You can now access admin tools.');
-    } else {
-      Alert.alert('Incorrect Passkey', 'Please try again.');
-    }
-  };
-
-  // Add to cart for per-item
   const addToCart = (service: ServiceItem) => {
-    setCart((prev: CartItem[]) => {
-      const existing = prev.find((item: CartItem) => item.id === service.id);
+    setCart(prev => {
+      const existing = prev.find(item => item.id === service.id);
       if (existing) {
-        return prev.map((item: CartItem) =>
+        return prev.map(item =>
           item.id === service.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
@@ -180,104 +168,85 @@ export default function BookingScreen() {
     });
   };
 
-  // Remove from cart for per-item
   const removeFromCart = (serviceId: string) => {
-    setCart((prev: CartItem[]) => {
-      const existing = prev.find((item: CartItem) => item.id === serviceId);
+    setCart(prev => {
+      const existing = prev.find(item => item.id === serviceId);
       if (existing && existing.quantity > 1) {
-        return prev.map((item: CartItem) =>
+        return prev.map(item =>
           item.id === serviceId
             ? { ...item, quantity: item.quantity - 1 }
             : item
         );
       }
-      return prev.filter((item: CartItem) => item.id !== serviceId);
+      return prev.filter(item => item.id !== serviceId);
     });
   };
 
-  // Get quantity for per-item
-  const getItemQuantity = (serviceId: string) => {
-    const item = cart.find((item: CartItem) => item.id === serviceId);
-    return item ? item.quantity : 0;
-  };
-
-  // Add to cart for per-bag
-  const addToBagCart = (service: BagService) => {
-    setBagCart((prev: BagCartItem[]) => {
-      const existing = prev.find((item: BagCartItem) => item.id === service.id);
+  const addBagToCart = (bagService: BagService) => {
+    setBagCart(prev => {
+      const existing = prev.find(item => item.id === bagService.id);
       if (existing) {
-        return prev.map((item: BagCartItem) =>
-          item.id === service.id
+        return prev.map(item =>
+          item.id === bagService.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
-      return [...prev, { ...service, quantity: 1 }];
+      return [...prev, { ...bagService, quantity: 1 }];
     });
   };
 
-  // Remove from cart for per-bag
-  const removeFromBagCart = (serviceId: string) => {
-    setBagCart((prev: BagCartItem[]) => {
-      const existing = prev.find((item: BagCartItem) => item.id === serviceId);
+  const removeBagFromCart = (serviceId: string) => {
+    setBagCart(prev => {
+      const existing = prev.find(item => item.id === serviceId);
       if (existing && existing.quantity > 1) {
-        return prev.map((item: BagCartItem) =>
+        return prev.map(item =>
           item.id === serviceId
             ? { ...item, quantity: item.quantity - 1 }
             : item
         );
       }
-      return prev.filter((item: BagCartItem) => item.id !== serviceId);
+      return prev.filter(item => item.id !== serviceId);
     });
   };
 
-  // Get quantity for per-bag
-  const getBagItemQuantity = (serviceId: string) => {
-    const item = bagCart.find((item: BagCartItem) => item.id === serviceId);
-    return item ? item.quantity : 0;
-  };
-
-  // Get current cart
-  const getCurrentCart = () => {
-    return orderType === 'per-item' ? cart : bagCart;
-  };
-
-  // Get total amount
-  const getTotalAmount = () => {
+  const getCartTotal = () => {
     if (orderType === 'per-item') {
-      return cart.reduce((total: number, item: CartItem) => total + (item.price * item.quantity), 0);
+      return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
     } else {
-      return bagCart.reduce((total: number, item: BagCartItem) => total + (item.price * item.quantity), 0);
+      return bagCart.reduce((total, item) => total + (item.price * item.quantity), 0);
     }
   };
 
-  // (removed duplicate and misplaced logic here)
+  const getCartItemCount = () => {
+    if (orderType === 'per-item') {
+      return cart.reduce((total, item) => total + item.quantity, 0);
+    } else {
+      return bagCart.reduce((total, item) => total + item.quantity, 0);
+    }
+  };
 
   const handleCheckout = () => {
-    const currentCart = getCurrentCart();
-    if (currentCart.length === 0) {
-      Alert.alert('Empty Cart', 'Please add items to your cart before checkout.');
+    if ((orderType === 'per-item' && cart.length === 0) || (orderType === 'per-bag' && bagCart.length === 0)) {
+      Alert.alert('Empty Cart', 'Please add items to your cart before proceeding.');
       return;
     }
 
-    if (!area.trim()) {
-      Alert.alert('Missing Information', 'Please enter your delivery area.');
+    if (!address.trim()) {
+      Alert.alert('Missing Address', 'Please enter your delivery address.');
       return;
     }
 
-    if (!phone.trim()) {
-      Alert.alert('Missing Information', 'Please enter your phone number.');
+    if (!phoneNumber.trim()) {
+      Alert.alert('Missing Phone Number', 'Please enter your phone number.');
       return;
     }
 
-    if (!pickupTime.trim()) {
-      Alert.alert('Missing Information', 'Please enter your preferred pickup time.');
-      return;
-    }
-
+    setOrderStep('payment');
     setShowPaymentModal(true);
   };
 
+<<<<<<< HEAD
   const handleScentToggle = (scent: string) => {
     setSelectedScents((prev) =>
       prev.includes(scent) ? prev.filter((s) => s !== scent) : [...prev, scent]
@@ -285,57 +254,143 @@ export default function BookingScreen() {
   };
 
   const handlePaymentSelected = async (paymentMethod: string, _paymentDetails?: any): Promise<void> => {
+=======
+  const handlePaymentComplete = async (paymentMethod: string, paymentDetails?: any) => {
+    setOrderStep('processing');
+    setShowPaymentModal(false);
+
+>>>>>>> 25cf15df486901cc88cd31a4462ceb622ce067eb
     try {
-      const currentCart = getCurrentCart();
-      const newOrderData = {
+      // Create order data
+      const orderData = {
         category: selectedCategory,
-        items: currentCart.map((item: any) => `${item.name} (x${item.quantity})`),
-        total: getTotalAmount(),
-        address: area,
-        date: pickupDate,
-        pickupTime: `${pickupDate} at ${pickupTime}`,
-        deliveryTime: deliveryTime ? `${deliveryDate} at ${deliveryTime}` : 'Standard delivery',
-        phone,
-        paymentMethod,
-        orderType,
-        notes: `Phone: ${phone}, Payment: ${paymentMethod}, Order Type: ${orderType}, Pickup: ${pickupDate} at ${pickupTime}, Delivery: ${deliveryTime ? `${deliveryDate} at ${deliveryTime}` : 'Standard delivery'}`,
+        date: new Date().toISOString().split('T')[0],
+        address: address.trim(),
         status: 'pending' as const,
+<<<<<<< HEAD
         scent: selectedScents,
+=======
+        items: orderType === 'per-item' 
+          ? cart.map(item => `${item.name} (${item.quantity})`)
+          : bagCart.map(item => `${item.name} (${item.quantity})`),
+        total: getCartTotal(),
+        pickupTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
+        notes: `Order Type: ${orderType}, Phone: ${phoneNumber}, Payment: ${paymentMethod}`,
+>>>>>>> 25cf15df486901cc88cd31a4462ceb622ce067eb
       };
 
-      const createdOrderId = await createOrder(newOrderData);
+      // Create order in database
+      const orderId = await createOrderContext(orderData);
 
-      // Create order data for modals
-      const modalOrderData = {
-        orderId: createdOrderId,
+      // Create detailed order object for modals
+      const detailedOrder = {
+        id: orderId,
         service: selectedCategory.replace('-', ' ').toUpperCase(),
-        items: currentCart.map((item: any) => `${item.name} (x${item.quantity})`),
-        total: getTotalAmount(),
-        area,
-        phone,
-        pickupTime: `${pickupDate} at ${pickupTime}`,
+        items: orderType === 'per-item' 
+          ? cart.map(item => ({ name: item.name, quantity: item.quantity, price: item.price }))
+          : bagCart.map(item => ({ name: item.name, quantity: item.quantity, price: item.price })),
+        total: getCartTotal(),
+        area: address.trim(),
+        phone: phoneNumber,
+        pickupTime: 'Tomorrow, 9:00 AM - 5:00 PM',
         paymentMethod,
+        status: 'pending',
         isPaid: paymentMethod !== 'cash',
+        orderType,
+        createdAt: new Date().toISOString(),
       };
 
-      setOrderData(modalOrderData);
+      setCurrentOrder(detailedOrder);
+      
+      // Send confirmation notification
+      await notificationService.sendLocalNotification({
+        orderId,
+        type: 'order_assigned',
+        title: '🎉 Order Confirmed!',
+        body: `Your ${selectedCategory.replace('-', ' ')} order has been confirmed. We'll pickup your items tomorrow.`,
+      });
 
-      // Reset form
-      setCart([]);
-      setBagCart([]);
-      setArea('');
-      setPhone('');
-      setPickupTime('');
-      setDeliveryTime('');
-      setShowPaymentModal(false);
+      // Clear cart and form
+      if (orderType === 'per-item') {
+        setCart([]);
+      } else {
+        setBagCart([]);
+      }
+      setAddress('');
+      setPhoneNumber('');
+      
+      setOrderStep('confirmed');
       setShowSuccessModal(true);
 
     } catch (error) {
-      Alert.alert('Error', 'Failed to place order. Please try again.');
+      console.error('Error creating order:', error);
+      Alert.alert(
+        'Order Failed', 
+        'There was an error creating your order. Please try again.',
+        [
+          { 
+            text: 'OK', 
+            onPress: () => {
+              setOrderStep('payment');
+              setShowPaymentModal(true);
+            }
+          }
+        ]
+      );
     }
   };
 
+  const handleOrderSuccess = () => {
+    setShowSuccessModal(false);
+    setOrderStep('cart');
+    // Navigate to tracking screen
+    Alert.alert(
+      'Track Your Order',
+      'Would you like to track your order now?',
+      [
+        { text: 'Later', style: 'cancel' },
+        { 
+          text: 'Track Now', 
+          onPress: () => {
+            // Navigate to track screen with order ID
+            // router.push(`/(tabs)/track?orderId=${currentOrder?.id}`);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleViewReceipt = () => {
+    setShowSuccessModal(false);
+    setShowReceiptModal(true);
+  };
+
+  const handleCloseReceipt = () => {
+    setShowReceiptModal(false);
+    setOrderStep('cart');
+  };
+
+  const filteredServices = services.filter(service => service.category === selectedCategory);
+  const filteredBagServices = bagServices.filter(service => service.category === selectedCategory);
+
+  const getItemQuantity = (itemId: string) => {
+    if (orderType === 'per-item') {
+      return cart.find(item => item.id === itemId)?.quantity || 0;
+    } else {
+      return bagCart.find(item => item.id === itemId)?.quantity || 0;
+    }
+  };
+
+  const showBagInfo = () => {
+    Alert.alert(
+      'Pay-per-Bag Service',
+      'Our pay-per-bag service is perfect for bulk laundry. Each bag can hold approximately 8-12 items depending on the type of clothing. This option offers great value for families or those with larger laundry loads.',
+      [{ text: 'Got it', style: 'default' }]
+    );
+  };
+
   return (
+<<<<<<< HEAD
     <><SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Premium Header */}
@@ -344,39 +399,53 @@ export default function BookingScreen() {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.headerGradient}
+=======
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.primary} />
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
+>>>>>>> 25cf15df486901cc88cd31a4462ceb622ce067eb
         >
-          <View style={styles.headerContent}>
-            <View style={styles.headerTop}>
-              <View style={styles.titleSection}>
-                <View style={styles.titleRow}>
-                  <Sparkles size={28} color="#FFFFFF" />
-                  <Text style={styles.title}>Book Service</Text>
+          {/* Premium Header */}
+          <LinearGradient
+            colors={[colors.primary, colors.primary + 'F0', colors.primary + 'E6', colors.primary + 'CC']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.headerGradient}
+          >
+            <View style={styles.headerContent}>
+              <View style={styles.headerTop}>
+                <View style={styles.titleSection}>
+                  <View style={styles.titleRow}>
+                    <Text style={styles.title}>Book Service</Text>
+                  </View>
+                  <Text style={styles.subtitle}>
+                    Choose your preferred laundry service
+                  </Text>
                 </View>
-                <Text style={styles.subtitle}>
-                  Premium laundry at your fingertips
-                </Text>
               </View>
             </View>
-          </View>
-        </LinearGradient>
+          </LinearGradient>
 
-        {/* Order Type Selection */}
-        <View style={styles.orderTypeSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Choose Order Type
-          </Text>
-          <View style={styles.orderTypeContainer}>
-            <TouchableOpacity
-              style={[
-                styles.orderTypeCard,
-                orderType === 'per-item' && styles.orderTypeCardSelected,
-                { backgroundColor: colors.surface }
-              ]}
-              onPress={() => setOrderType('per-item')}
-              activeOpacity={0.8}
-            >
-              {orderType === 'per-item' && (
+          {/* Order Type Selection */}
+          <View style={styles.orderTypeSection}>
+            <View style={styles.orderTypeContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.orderTypeCard,
+                  orderType === 'per-item' && styles.orderTypeCardSelected
+                ]}
+                onPress={() => setOrderType('per-item')}
+                activeOpacity={0.8}
+              >
                 <LinearGradient
+<<<<<<< HEAD
                   colors={[colors.primary, colors.primary + 'E6']}
                   style={styles.orderTypeGradient} />
               )}
@@ -386,33 +455,54 @@ export default function BookingScreen() {
                   { backgroundColor: orderType === 'per-item' ? 'rgba(255,255,255,0.2)' : colors.primary + '20' }
                 ]}>
                   <Sparkles size={24} color={orderType === 'per-item' ? '#FFFFFF' : colors.primary} />
+=======
+                  colors={orderType === 'per-item' 
+                    ? [colors.primary, colors.primary + 'E6'] 
+                    : [colors.card, colors.card + 'F0']
+                  }
+                  style={styles.orderTypeGradient}
+                />
+                <View style={styles.orderTypeContent}>
+                  <View style={[
+                    styles.orderTypeIcon,
+                    { backgroundColor: orderType === 'per-item' ? 'rgba(255,255,255,0.2)' : colors.primary + '20' }
+                  ]}>
+                    <Package2 
+                      size={28} 
+                      color={orderType === 'per-item' ? '#FFFFFF' : colors.primary} 
+                    />
+                  </View>
+                  <Text style={[
+                    styles.orderTypeTitle,
+                    { color: orderType === 'per-item' ? '#FFFFFF' : colors.text }
+                  ]}>
+                    Per Item
+                  </Text>
+                  <Text style={[
+                    styles.orderTypeDescription,
+                    { color: orderType === 'per-item' ? 'rgba(255,255,255,0.9)' : colors.textSecondary }
+                  ]}>
+                    Pay for individual items with precise pricing
+                  </Text>
+                  {orderType === 'per-item' && (
+                    <View style={styles.popularBadge}>
+                      <Text style={styles.popularText}>SELECTED</Text>
+                    </View>
+                  )}
+>>>>>>> 25cf15df486901cc88cd31a4462ceb622ce067eb
                 </View>
-                <Text style={[
-                  styles.orderTypeTitle,
-                  { color: orderType === 'per-item' ? '#FFFFFF' : colors.text }
-                ]}>
-                  Pay per Item
-                </Text>
-                <Text style={[
-                  styles.orderTypeDescription,
-                  { color: orderType === 'per-item' ? 'rgba(255,255,255,0.8)' : colors.textSecondary }
-                ]}>
-                  Ideal for few pieces{'\n'}Ultimate flexibility!
-                </Text>
-              </View>
-            </TouchableOpacity>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.orderTypeCard,
-                orderType === 'per-bag' && styles.orderTypeCardSelected,
-                { backgroundColor: colors.surface }
-              ]}
-              onPress={() => setOrderType('per-bag')}
-              activeOpacity={0.8}
-            >
-              {orderType === 'per-bag' && (
+              <TouchableOpacity
+                style={[
+                  styles.orderTypeCard,
+                  orderType === 'per-bag' && styles.orderTypeCardSelected
+                ]}
+                onPress={() => setOrderType('per-bag')}
+                activeOpacity={0.8}
+              >
                 <LinearGradient
+<<<<<<< HEAD
                   colors={[colors.primary, colors.primary + 'E6']}
                   style={styles.orderTypeGradient} />
               )}
@@ -573,21 +663,72 @@ export default function BookingScreen() {
                 <Text style={[styles.infoButtonText, { color: colors.primary }]}>
                   Bag Info
                 </Text>
+=======
+                  colors={orderType === 'per-bag' 
+                    ? [colors.primary, colors.primary + 'E6'] 
+                    : [colors.card, colors.card + 'F0']
+                  }
+                  style={styles.orderTypeGradient}
+                />
+                <View style={styles.orderTypeContent}>
+                  <View style={[
+                    styles.orderTypeIcon,
+                    { backgroundColor: orderType === 'per-bag' ? 'rgba(255,255,255,0.2)' : colors.primary + '20' }
+                  ]}>
+                    <ShoppingCart 
+                      size={28} 
+                      color={orderType === 'per-bag' ? '#FFFFFF' : colors.primary} 
+                    />
+                  </View>
+                  <Text style={[
+                    styles.orderTypeTitle,
+                    { color: orderType === 'per-bag' ? '#FFFFFF' : colors.text }
+                  ]}>
+                    Per Bag
+                  </Text>
+                  <Text style={[
+                    styles.orderTypeDescription,
+                    { color: orderType === 'per-bag' ? 'rgba(255,255,255,0.9)' : colors.textSecondary }
+                  ]}>
+                    Great value for bulk laundry loads
+                  </Text>
+                  <View style={styles.popularBadge}>
+                    <Text style={styles.popularText}>POPULAR</Text>
+                  </View>
+                  {orderType === 'per-bag' && (
+                    <View style={styles.popularBadge}>
+                      <Text style={styles.popularText}>SELECTED</Text>
+                    </View>
+                  )}
+                </View>
+>>>>>>> 25cf15df486901cc88cd31a4462ceb622ce067eb
               </TouchableOpacity>
             </View>
-            <Text style={[styles.bagServicesSubtitle, { color: colors.textSecondary }]}>
-              How many bags for each service do you need?
-            </Text>
-            {filteredBagServices.map((service) => {
-              const quantity = getBagItemQuantity(service.id);
-              const isInCart = quantity > 0;
+          </View>
 
-              return (
+          {/* Service Categories */}
+          <View style={styles.categoriesSection}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Service Categories
+            </Text>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoriesContainer}
+              contentContainerStyle={styles.categoriesContent}
+            >
+              {serviceCategories.map((category) => (
                 <TouchableOpacity
-                  key={service.id}
-                  activeOpacity={0.9}
-                  onPress={() => addToBagCart(service)}
+                  key={category.id}
+                  style={[
+                    styles.categoryCard,
+                    selectedCategory === category.id && styles.categoryCardSelected,
+                    { backgroundColor: colors.card }
+                  ]}
+                  onPress={() => setSelectedCategory(category.id)}
+                  activeOpacity={0.8}
                 >
+<<<<<<< HEAD
                   <Card
                     style={{
                       ...styles.bagServiceItem,
@@ -600,51 +741,267 @@ export default function BookingScreen() {
                       <View style={styles.bagServiceInfo}>
                         <View style={styles.bagServiceHeader}>
                           <Text style={[styles.bagServiceName, { color: colors.text }]}>
+=======
+                  {selectedCategory === category.id && (
+                    <LinearGradient
+                      colors={[colors.primary + '20', colors.primary + '10']}
+                      style={styles.categoryGradient}
+                    />
+                  )}
+                  <View style={[
+                    styles.categoryIconContainer,
+                    { backgroundColor: selectedCategory === category.id ? colors.primary : colors.background }
+                  ]}>
+                    <Image source={category.image} style={styles.categoryImage} />
+                  </View>
+                  <Text style={[
+                    styles.categoryName,
+                    { 
+                      color: selectedCategory === category.id ? colors.primary : colors.text,
+                      fontWeight: selectedCategory === category.id ? '700' : '600'
+                    }
+                  ]}>
+                    {category.name}
+                  </Text>
+                  {selectedCategory === category.id && (
+                    <View style={styles.selectedIndicator}>
+                      <View style={styles.selectedDot} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Services List */}
+          <View style={styles.servicesSection}>
+            {orderType === 'per-bag' ? (
+              <>
+                <View style={styles.bagServicesHeader}>
+                  <Text style={[styles.servicesSectionTitle, { color: colors.text }]}>
+                    Bag Services
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.infoButton, { backgroundColor: colors.primary + '20' }]}
+                    onPress={showBagInfo}
+                  >
+                    <Info size={14} color={colors.primary} />
+                    <Text style={[styles.infoButtonText, { color: colors.primary }]}>
+                      Info
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={[styles.bagServicesSubtitle, { color: colors.textSecondary }]}>
+                  Each bag can hold 8-12 items. Perfect for bulk laundry with great value pricing.
+                </Text>
+                {filteredBagServices.map((service) => {
+                  const quantity = getItemQuantity(service.id);
+                  return (
+                    <View
+                      key={service.id}
+                      style={[
+                        styles.bagServiceItem,
+                        { backgroundColor: colors.card },
+                        quantity > 0 && styles.serviceItemSelected
+                      ]}
+                    >
+                      <View style={styles.bagServiceContent}>
+                        <View style={styles.bagServiceInfo}>
+                          <View style={styles.bagServiceHeader}>
+                            <Text style={[styles.bagServiceName, { color: colors.text }]}>
+                              {service.name}
+                            </Text>
+                            <View style={[styles.bagServiceBadge, { backgroundColor: colors.primary + '20' }]}>
+                              <Sparkles size={12} color={colors.primary} />
+                              <Text style={[styles.bagServiceBadgeText, { color: colors.primary }]}>
+                                BULK
+                              </Text>
+                            </View>
+                          </View>
+                          <Text style={[styles.bagServiceDescription, { color: colors.textSecondary }]}>
+                            {service.description}
+                          </Text>
+                          <Text style={[styles.bagServicePrice, { color: colors.primary }]}>
+                            KSh {service.price.toLocaleString()}
+                          </Text>
+                        </View>
+                        <View style={styles.quantityControls}>
+                          {quantity > 0 && (
+                            <TouchableOpacity
+                              style={styles.quantityButton}
+                              onPress={() => removeBagFromCart(service.id)}
+                            >
+                              <LinearGradient
+                                colors={['#FF6B6B', '#FF5252']}
+                                style={styles.quantityButton}
+                              >
+                                <Minus size={20} color="#FFFFFF" />
+                              </LinearGradient>
+                            </TouchableOpacity>
+                          )}
+                          {quantity > 0 && (
+                            <View style={[styles.quantityDisplay, { backgroundColor: colors.primary + '20' }]}>
+                              <Text style={[styles.quantityText, { color: colors.primary }]}>
+                                {quantity}
+                              </Text>
+                            </View>
+                          )}
+                          <TouchableOpacity
+                            style={styles.quantityButton}
+                            onPress={() => addBagToCart(service)}
+                          >
+                            <LinearGradient
+                              colors={['#51CF66', '#40C057']}
+                              style={styles.quantityButton}
+                            >
+                              <Plus size={20} color="#FFFFFF" />
+                            </LinearGradient>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                      {quantity > 0 && (
+                        <View style={[styles.inCartBadge, { backgroundColor: colors.primary }]}>
+                          <Text style={styles.inCartText}>IN CART</Text>
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+              </>
+            ) : (
+              <>
+                <Text style={[styles.servicesSectionTitle, { color: colors.text }]}>
+                  {serviceCategories.find(cat => cat.id === selectedCategory)?.name} Services
+                </Text>
+                {filteredServices.map((service) => {
+                  const quantity = getItemQuantity(service.id);
+                  return (
+                    <View
+                      key={service.id}
+                      style={[
+                        styles.serviceItem,
+                        { backgroundColor: colors.card },
+                        quantity > 0 && styles.serviceItemSelected
+                      ]}
+                    >
+                      <View style={styles.serviceContent}>
+                        <View style={styles.serviceInfo}>
+                          <Text style={[styles.serviceName, { color: colors.text }]}>
+>>>>>>> 25cf15df486901cc88cd31a4462ceb622ce067eb
                             {service.name}
                           </Text>
-                          <View style={[styles.bagServiceBadge, { backgroundColor: colors.success + '20' }]}>
-                            <Package2 size={12} color={colors.success} />
-                            <Text style={[styles.bagServiceBadgeText, { color: colors.success }]}>
-                              Per Bag
+                          <Text style={[styles.servicePrice, { color: colors.primary }]}>
+                            KSh {service.price.toLocaleString()}
+                          </Text>
+                        </View>
+                        <View style={styles.quantityControls}>
+                          {quantity > 0 && (
+                            <TouchableOpacity
+                              style={styles.quantityButton}
+                              onPress={() => removeFromCart(service.id)}
+                            >
+                              <LinearGradient
+                                colors={['#FF6B6B', '#FF5252']}
+                                style={styles.quantityButton}
+                              >
+                                <Minus size={20} color="#FFFFFF" />
+                              </LinearGradient>
+                            </TouchableOpacity>
+                          )}
+                          {quantity > 0 && (
+                            <View style={[styles.quantityDisplay, { backgroundColor: colors.primary + '20' }]}>
+                              <Text style={[styles.quantityText, { color: colors.primary }]}>
+                                {quantity}
+                              </Text>
+                            </View>
+                          )}
+                          <TouchableOpacity
+                            style={styles.quantityButton}
+                            onPress={() => addToCart(service)}
+                          >
+                            <LinearGradient
+                              colors={['#51CF66', '#40C057']}
+                              style={styles.quantityButton}
+                            >
+                              <Plus size={20} color="#FFFFFF" />
+                            </LinearGradient>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                      {quantity > 0 && (
+                        <View style={[styles.inCartBadge, { backgroundColor: colors.primary }]}>
+                          <Text style={styles.inCartText}>IN CART</Text>
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+              </>
+            )}
+          </View>
+
+          {/* Cart Summary */}
+          {getCartItemCount() > 0 && (
+            <View style={styles.cartSection}>
+              <LinearGradient
+                colors={[colors.card, colors.card + 'F0']}
+                style={styles.cartGradient}
+              >
+                <View style={[styles.cartSummary, { backgroundColor: 'transparent' }]}>
+                  <View style={styles.cartHeader}>
+                    <View style={[styles.cartIconContainer, { backgroundColor: colors.primary + '20' }]}>
+                      <ShoppingCart size={24} color={colors.primary} />
+                    </View>
+                    <View style={styles.cartHeaderText}>
+                      <Text style={[styles.cartTitle, { color: colors.text }]}>
+                        Your Cart
+                      </Text>
+                      <Text style={[styles.cartSubtitle, { color: colors.textSecondary }]}>
+                        {getCartItemCount()} {getCartItemCount() === 1 ? 'item' : 'items'} selected
+                      </Text>
+                    </View>
+                    <View style={[styles.cartBadge, { backgroundColor: colors.primary }]}>
+                      <Text style={styles.cartBadgeText}>
+                        {getCartItemCount()}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.cartItems}>
+                    {orderType === 'per-item' ? (
+                      cart.map((item) => (
+                        <View key={item.id} style={[styles.cartItem, { borderBottomColor: colors.border }]}>
+                          <View style={styles.cartItemInfo}>
+                            <Text style={[styles.cartItemName, { color: colors.text }]}>
+                              {item.name}
+                            </Text>
+                            <Text style={[styles.cartItemDetails, { color: colors.textSecondary }]}>
+                              {item.quantity} × KSh {item.price.toLocaleString()}
                             </Text>
                           </View>
+                          <Text style={[styles.cartItemPrice, { color: colors.primary }]}>
+                            KSh {(item.price * item.quantity).toLocaleString()}
+                          </Text>
                         </View>
-                        <Text style={[styles.bagServiceDescription, { color: colors.textSecondary }]}>
-                          {service.description}
-                        </Text>
-                        <Text style={[styles.bagServicePrice, { color: colors.primary }]}>
-                          KSH {service.price}
-                        </Text>
-                      </View>
-                      <View style={styles.quantityControls}>
-                        {quantity > 0 && (
-                          <>
-                            <TouchableOpacity
-                              style={[styles.quantityButton, styles.removeButton]}
-                              onPress={() => removeFromBagCart(service.id)}
-                              activeOpacity={0.8}
-                            >
-                              <Minus size={16} color="#FFFFFF" />
-                            </TouchableOpacity>
-                            <View style={styles.quantityDisplay}>
-                              <Text style={styles.quantityText}>{quantity}</Text>
-                            </View>
-                          </>
-                        )}
-                        <TouchableOpacity
-                          style={[styles.quantityButton, styles.addButton]}
-                          onPress={() => addToBagCart(service)}
-                          activeOpacity={0.8}
-                        >
-                          <Plus size={16} color="#FFFFFF" />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                    {isInCart && (
-                      <View style={[styles.inCartBadge, { backgroundColor: colors.success }]}>
-                        <Text style={styles.inCartText}>In Cart</Text>
-                      </View>
+                      ))
+                    ) : (
+                      bagCart.map((item) => (
+                        <View key={item.id} style={[styles.cartItem, { borderBottomColor: colors.border }]}>
+                          <View style={styles.cartItemInfo}>
+                            <Text style={[styles.cartItemName, { color: colors.text }]}>
+                              {item.name}
+                            </Text>
+                            <Text style={[styles.cartItemDetails, { color: colors.textSecondary }]}>
+                              {item.quantity} × KSh {item.price.toLocaleString()}
+                            </Text>
+                          </View>
+                          <Text style={[styles.cartItemPrice, { color: colors.primary }]}>
+                            KSh {(item.price * item.quantity).toLocaleString()}
+                          </Text>
+                        </View>
+                      ))
                     )}
+<<<<<<< HEAD
                   </Card>
                 </TouchableOpacity>
               );
@@ -799,10 +1156,130 @@ export default function BookingScreen() {
         </>
       );
     }
+=======
+                  </View>
+
+                  <View style={[styles.cartTotal, { borderTopColor: colors.border }]}>
+                    <Text style={[styles.totalLabel, { color: colors.text }]}>
+                      Total
+                    </Text>
+                    <Text style={[styles.totalAmount, { color: colors.primary }]}>
+                      KSh {getCartTotal().toLocaleString()}
+                    </Text>
+                  </View>
+                </View>
+              </LinearGradient>
+            </View>
+          )}
+
+          {/* Delivery Information */}
+          {getCartItemCount() > 0 && (
+            <View style={styles.deliverySection}>
+              <Text style={[styles.deliverySectionTitle, { color: colors.text }]}>
+                Delivery Information
+              </Text>
+              <View style={[styles.deliveryCard, { backgroundColor: colors.card }]}>
+                <View style={styles.inputGroup}>
+                  <View style={[styles.inputIconContainer, { backgroundColor: colors.primary + '20' }]}>
+                    <MapPin size={24} color={colors.primary} />
+                  </View>
+                  <TextInput
+                    style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
+                    placeholder="Enter your delivery address"
+                    placeholderTextColor={colors.textSecondary}
+                    value={address}
+                    onChangeText={setAddress}
+                    multiline
+                  />
+                </View>
+                <View style={styles.inputGroup}>
+                  <View style={[styles.inputIconContainer, { backgroundColor: colors.primary + '20' }]}>
+                    <Phone size={24} color={colors.primary} />
+                  </View>
+                  <TextInput
+                    style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
+                    placeholder="Enter your phone number"
+                    placeholderTextColor={colors.textSecondary}
+                    value={phoneNumber}
+                    onChangeText={setPhoneNumber}
+                    keyboardType="phone-pad"
+                  />
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Checkout Button */}
+          {getCartItemCount() > 0 && (
+            <View style={styles.checkoutSection}>
+              <TouchableOpacity
+                style={styles.checkoutGradient}
+                onPress={handleCheckout}
+                activeOpacity={0.9}
+              >
+                <LinearGradient
+                  colors={[colors.primary, colors.primary + 'E6']}
+                  style={styles.checkoutGradient}
+                >
+                  <View style={styles.checkoutButton}>
+                    <ShoppingCart size={24} color="#FFFFFF" />
+                    <Text style={styles.checkoutButtonText}>
+                      Proceed to Payment • KSh {getCartTotal().toLocaleString()}
+                    </Text>
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        visible={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onPaymentSelect={handlePaymentComplete}
+        total={getCartTotal()}
+      />
+
+      {/* Success Modal */}
+      {currentOrder && (
+        <OrderConfirmationModal
+          visible={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          onViewReceipt={() => {
+            setShowSuccessModal(false);
+            setShowReceiptModal(true);
+          }}
+          orderData={currentOrder}
+        />
+      )}
+
+      {/* Receipt Modal */}
+      {currentOrder && (
+        <ReceiptModal
+          visible={showReceiptModal}
+          onClose={() => setShowReceiptModal(false)}
+          order={currentOrder}
+        />
+      )}
+
+      {/* WhatsApp Support Button */}
+      <WhatsAppButton />
+    </SafeAreaView>
+  );
+}
+>>>>>>> 25cf15df486901cc88cd31a4462ceb622ce067eb
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   headerGradient: {
     paddingTop: 60,
@@ -1319,6 +1796,10 @@ const styles = StyleSheet.create({
 // declare module '*.png' {
 //   const value: any;
 //   export default value;
+<<<<<<< HEAD
 // }
 
 // (Removed jpg module declaration; move to a .d.ts file in your project root)
+=======
+// }
+>>>>>>> 25cf15df486901cc88cd31a4462ceb622ce067eb

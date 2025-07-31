@@ -1,5 +1,16 @@
 {
   "dependencies": {
+<<<<<<< HEAD
     "firebase": "^12.0.0"
+=======
+    "@expo/vector-icons": "^14.1.0",
+    "@react-google-maps/api": "^2.20.7",
+    "expo-location": "^18.1.6",
+    "expo-notifications": "^0.31.4",
+    "react-native-background-geolocation": "^4.18.9",
+    "react-native-background-job": "^2.3.1",
+    "react-native-maps": "^1.24.13",
+    "uuid": "^11.1.0"
+>>>>>>> 25cf15df486901cc88cd31a4462ceb622ce067eb
   }
 }

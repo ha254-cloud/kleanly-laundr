@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "EXPO_NO_TELEMETRY=1 npx expo start --tunnel",
+    "start": "npm run dev",
     "build:web": "expo export --platform web",
     "lint": "expo lint"
   },
@@ -25,7 +26,11 @@
     "expo-linear-gradient": "^14.1.5",
     "expo-linking": "~7.1.3",
     "expo-location": "^18.1.1",
+<<<<<<< HEAD
     "expo-notifications": "^0.31.4",
+=======
+    "expo-notifications": "~0.30.1",
+>>>>>>> 25cf15df486901cc88cd31a4462ceb622ce067eb
     "expo-router": "~5.1.4",
     "expo-secure-store": "^14.2.3",
     "expo-splash-screen": "~0.30.6",

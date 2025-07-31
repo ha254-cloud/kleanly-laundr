@@ -51,10 +51,39 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
+<<<<<<< HEAD
       const orderId = res.data.order_id;
       // Optionally fetch orders again
       await refreshOrders();
       return orderId;
+=======
+      
+      // Add the new order to the local state
+      const newOrder: Order = {
+        id: orderId,
+        ...orderData,
+        userID: user.uid,
+        createdAt: new Date().toISOString(),
+      };
+      
+      setOrders(prev => [newOrder, ...prev]);
+      
+      // Send order created notification
+      try {
+        await import('../services/notificationService').then(({ notificationService }) => {
+          notificationService.sendLocalNotification({
+            orderId,
+            type: 'order_assigned',
+            title: 'Order Created Successfully! 🎉',
+            body: `Your ${orderData.category.replace('-', ' ')} order has been placed and is being processed.`,
+          });
+        });
+      } catch (notificationError) {
+        console.log('Notification service not available:', notificationError);
+      }
+      
+      return orderId; // Return the order ID
+>>>>>>> 25cf15df486901cc88cd31a4462ceb622ce067eb
     } catch (error) {
       throw error;
     } finally {

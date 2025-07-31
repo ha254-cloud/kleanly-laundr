@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   Dimensions,
+  ScrollView,
 } from 'react-native';
 import { X, CreditCard, Smartphone, Banknote, ArrowRight } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
@@ -158,7 +159,12 @@ export const PaymentSelectionModal: React.FC<PaymentSelectionModalProps> = ({
           </TouchableOpacity>
         </View>
 
-        <View style={styles.content}>
+        <ScrollView 
+          style={styles.content}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
+        >
           {/* Total Amount */}
           <Card style={styles.totalCard}>
             <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>
@@ -280,7 +286,7 @@ export const PaymentSelectionModal: React.FC<PaymentSelectionModalProps> = ({
               </Text>
             </TouchableOpacity>
           </LinearGradient>
-        </View>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -306,7 +312,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 20,
+    paddingBottom: 40,
   },
   totalCard: {
     alignItems: 'center',
