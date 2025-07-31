@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Body, WebSocket, WebSocketDisconnect, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from notifications import send_order_status_notification, send_driver_location_notification
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
@@ -233,3 +234,23 @@ async def driver_location_ws(websocket: WebSocket, driver_id: str):
         pass
     finally:
         db.close()
+
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the API"}  # Always returns JSON
+
+@app.get("/status")
+async def status():
+    return {"status": "ok"}  # Always returns JSON
+
+@app.get("/error")
+async def error():
+    return JSONResponse(status_code=400, content={"error": "Bad request"})
+
+@app.exception_handler(404)
+async def not_found_handler(request, exc):
+    return JSONResponse(status_code=404, content={"error": "Not found"})
+
+@app.exception_handler(500)
+async def server_error_handler(request, exc):
+    return JSONResponse(status_code=500, content={"error": "Internal server error"})
