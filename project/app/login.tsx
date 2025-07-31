@@ -8,6 +8,8 @@ import {
   Platform,
   Alert,
   TouchableOpacity,
+  ImageBackground,
+  Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
@@ -18,6 +20,10 @@ import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Logo } from '../components/ui/Logo';
+
+const bgImage = require('../assets/images/space.jpg');
+
+const { width } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -73,7 +79,7 @@ export default function LoginScreen() {
         ];
         
         // Only log unexpected errors to console
-        if (!knownAuthErrors.includes(error.code)) {
+        if (typeof error.code !== 'string' || !knownAuthErrors.includes(error.code)) {
           console.error('Unexpected auth error:', error);
         }
         
@@ -121,91 +127,114 @@ export default function LoginScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <View style={styles.content}>
-          {/* Logo Section */}
-          <View style={styles.logoSection}>
-            <View style={styles.logoContainer}>
-              <Logo size="large" showText={true} />
-              <View style={[styles.logoGlow, { backgroundColor: colors.primary + '20' }]} />
+    <ImageBackground
+      source={bgImage}
+      style={styles.background}
+      resizeMode="cover"
+    >
+      <View style={styles.gradientOverlay} />
+      <SafeAreaView style={styles.container}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <View style={styles.content}>
+            {/* Logo Section */}
+            <View style={styles.logoSection}>
+              <View style={styles.logoContainer}>
+                <Logo size="large" showText={true} />
+                <View style={[styles.logoGlow, { backgroundColor: colors.primary + '30' }]} />
+              </View>
+              <Text style={styles.tagline}>
+                Premium Laundry & Dry Cleaning
+              </Text>
             </View>
-            <Text style={[styles.tagline, { color: colors.textSecondary }]}>
-              Premium Laundry & Dry Cleaning
-            </Text>
-          </View>
 
-          {/* Login Form */}
-          <Card style={styles.formCard}>
-            <Text style={[styles.formTitle, { color: colors.text }]}>
-              {isLogin ? 'Welcome Back' : 'Create Account'}
-            </Text>
-            <Text style={[styles.formSubtitle, { color: colors.textSecondary }]}>
-              {isLogin 
-                ? 'Sign in to your account' 
-                : 'Join Kleanly for premium laundry services'
-              }
-            </Text>
+            {/* Login Form */}
+            <View style={styles.glassCard}>
+              <Text style={styles.formTitle}>
+                {isLogin ? 'Welcome Back' : 'Create Account'}
+              </Text>
+              <Text style={styles.formSubtitle}>
+                {isLogin 
+                  ? 'Sign in to your account' 
+                  : 'Join Kleanly for premium laundry services'
+                }
+              </Text>
 
-            <Input
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Enter your email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-
-            <Input
-              label="Password"
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Enter your password"
-              secureTextEntry
-            />
-
-            {!isLogin && (
               <Input
-                label="Confirm Password"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="Confirm your password"
+                label="Email"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Enter your email"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <Input
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Enter your password"
                 secureTextEntry
               />
-            )}
 
-            <Button
-              title={isLogin ? 'Sign In' : 'Create Account'}
-              onPress={handleSubmit}
-              style={styles.submitButton}
-            />
+              {!isLogin && (
+                <Input
+                  label="Confirm Password"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Confirm your password"
+                  secureTextEntry
+                />
+              )}
 
-            <View style={styles.switchMode}>
-              <Text style={[styles.switchText, { color: colors.textSecondary }]}>
-                {isLogin ? "Don't have an account?" : 'Already have an account?'}
-              </Text>
               <Button
-                title={isLogin ? 'Sign Up' : 'Sign In'}
-                onPress={() => setIsLogin(!isLogin)}
-                variant="outline"
-                size="small"
-                style={styles.switchButton}
+                title={isLogin ? 'Sign In' : 'Create Account'}
+                onPress={handleSubmit}
+                style={styles.submitButton}
               />
-            </View>
-          </Card>
 
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+              <View style={styles.switchMode}>
+                <Text style={styles.switchText}>
+                  {isLogin ? "Don't have an account?" : 'Already have an account?'}
+                </Text>
+                <Button
+                  title={isLogin ? 'Sign Up' : 'Sign In'}
+                  onPress={() => setIsLogin(!isLogin)}
+                  variant="outline"
+                  size="small"
+                  style={styles.switchButton}
+                />
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+  },
+  gradientOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+    backgroundColor: 'rgba(30,30,40,0.35)',
+    // Modern glassmorphism gradient
+    borderBottomLeftRadius: 60,
+    borderBottomRightRadius: 60,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+  },
   container: {
     flex: 1,
+    zIndex: 2,
   },
   keyboardView: {
     flex: 1,
@@ -217,7 +246,7 @@ const styles = StyleSheet.create({
   },
   logoSection: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 28,
   },
   logoContainer: {
     position: 'relative',
@@ -233,25 +262,49 @@ const styles = StyleSheet.create({
     zIndex: -1,
   },
   tagline: {
-    fontSize: 16,
+    fontSize: 18,
     textAlign: 'center',
     marginTop: 16,
-    fontWeight: '500',
+    fontWeight: '600',
+    letterSpacing: 1,
+    color: '#fff',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 1, height: 2 },
+    textShadowRadius: 8,
+    opacity: 0.92,
   },
-  formCard: {
-    padding: 24,
+  glassCard: {
+    padding: 28,
     marginBottom: 20,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    backdropFilter: 'blur(12px)', // For web, ignored on native
+    elevation: 8,
   },
   formTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 8,
+    letterSpacing: 1,
+    color: '#fff',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 1, height: 2 },
+    textShadowRadius: 8,
+    opacity: 0.95,
   },
   formSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
     marginBottom: 24,
+    color: '#f3f3f3',
+    opacity: 0.85,
   },
   submitButton: {
     marginTop: 8,
@@ -265,6 +318,8 @@ const styles = StyleSheet.create({
   },
   switchText: {
     fontSize: 14,
+    color: '#fff',
+    opacity: 0.85,
   },
   switchButton: {
     paddingHorizontal: 16,

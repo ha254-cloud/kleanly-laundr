@@ -79,13 +79,8 @@ const services: ServiceItem[] = [
 
 // Pay-per-bag services adapted for Kenya
 const bagServices: BagService[] = [
-  // Casuals - Wash & Fold
   { id: 'casuals-bag', name: 'Casuals Bag', description: 'Everyday clothes - wash & fold service', price: 800, category: 'wash-fold' },
-  
-  // Delicates - Clean & Press
   { id: 'delicates-bag', name: 'Delicates Bag', description: 'Smart wear - clean & press service', price: 1200, category: 'dry-cleaning' },
-  
-  // Home Linens
   { id: 'home-bag', name: 'Home Linens Bag', description: 'Bedding & towels - wash & fold service', price: 1000, category: 'wash-fold' },
   
   // Press Only
@@ -95,63 +90,38 @@ const bagServices: BagService[] = [
   { id: 'kids-uniforms-bag', name: 'Kids Uniforms Bag', description: 'School uniforms - wash & press service', price: 700, category: 'wash-fold' },
 ];
 
-import washFoldImg from '../../assets/images/wash-fold.jpg';
-import dryCleaningImg from '../../assets/images/dry cleaning.jpg';
-import ironingImg from '../../assets/images/ironing.jpg';
-import shoeCleaningImg from '../../assets/images/shoe cleaning.jpg';
+const washFoldImg = require('../../assets/images/wash-fold.jpg');
+const dryCleaningImg = require('../../assets/images/dry cleaning.jpg');
+const ironingImg = require('../../assets/images/ironing.jpg');
+const shoeCleaningImg = require('../../assets/images/shoe cleaning.jpg');
+import { ImageSourcePropType } from 'react-native';
 
-const serviceCategories = [
+type ServiceCategory = {
+  id: string;
+  name: string;
+  image: ImageSourcePropType;
+};
+
+const serviceCategories: ServiceCategory[] = [
   { id: 'wash-fold', name: 'Wash & Fold', image: washFoldImg },
   { id: 'dry-cleaning', name: 'Dry Cleaning', image: dryCleaningImg },
   { id: 'ironing', name: 'Ironing', image: ironingImg },
   { id: 'shoe-cleaning', name: 'Shoe Cleaning', image: shoeCleaningImg },
 ];
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  headerGradient: {
-    paddingTop: 60,
-    paddingBottom: 40,
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  headerContent: {
-    alignItems: 'center',
-  },
-  headerTop: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  titleSection: {
-    alignItems: 'center',
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 12,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  subtitle: {
-    fontSize: 18,
-    color: 'rgba(255, 255, 255, 0.9)',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  serviceItemSelected: {
-    shadowColor: '#51CF66',
-    shadowOpacity: 0.2,
-    elevation: 8,
-    borderColor: '#51CF66',
-    borderWidth: 2,
-  },
-  // ... (rest of your styles object here)
-});
+// (Removed duplicate styles declaration here)
+
+// Scent options for Kenya
+const scentOptions = [
+  'Lavender',
+  'Lemongrass',
+  'Rose',
+  'No scent',
+  'Aloe Vera',
+  'Jasmine',
+  'Fresh Linen',
+  'Eucalyptus',
+  'Coconut',
+];
 
 export default function BookingScreen() {
   const { isDark } = useTheme();
@@ -180,6 +150,7 @@ export default function BookingScreen() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [orderData, setOrderData] = useState<any>(null);
+  const [selectedScents, setSelectedScents] = useState<string[]>([]);
 
   // Filtered services by selected category
   const filteredServices = services.filter(s => s.category === selectedCategory);
@@ -307,6 +278,12 @@ export default function BookingScreen() {
     setShowPaymentModal(true);
   };
 
+  const handleScentToggle = (scent: string) => {
+    setSelectedScents((prev) =>
+      prev.includes(scent) ? prev.filter((s) => s !== scent) : [...prev, scent]
+    );
+  };
+
   const handlePaymentSelected = async (paymentMethod: string, _paymentDetails?: any): Promise<void> => {
     try {
       const currentCart = getCurrentCart();
@@ -323,6 +300,7 @@ export default function BookingScreen() {
         orderType,
         notes: `Phone: ${phone}, Payment: ${paymentMethod}, Order Type: ${orderType}, Pickup: ${pickupDate} at ${pickupTime}, Delivery: ${deliveryTime ? `${deliveryDate} at ${deliveryTime}` : 'Standard delivery'}`,
         status: 'pending' as const,
+        scent: selectedScents,
       };
 
       const createdOrderId = await createOrder(newOrderData);
@@ -358,7 +336,7 @@ export default function BookingScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <><SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Premium Header */}
         <LinearGradient
@@ -400,8 +378,7 @@ export default function BookingScreen() {
               {orderType === 'per-item' && (
                 <LinearGradient
                   colors={[colors.primary, colors.primary + 'E6']}
-                  style={styles.orderTypeGradient}
-                />
+                  style={styles.orderTypeGradient} />
               )}
               <View style={styles.orderTypeContent}>
                 <View style={[
@@ -437,8 +414,7 @@ export default function BookingScreen() {
               {orderType === 'per-bag' && (
                 <LinearGradient
                   colors={[colors.primary, colors.primary + 'E6']}
-                  style={styles.orderTypeGradient}
-                />
+                  style={styles.orderTypeGradient} />
               )}
               <View style={styles.orderTypeContent}>
                 <View style={[
@@ -493,8 +469,7 @@ export default function BookingScreen() {
                 {selectedCategory === category.id && (
                   <LinearGradient
                     colors={[colors.primary, colors.primary + 'E6']}
-                    style={styles.categoryGradient}
-                  />
+                    style={styles.categoryGradient} />
                 )}
                 <View style={[
                   styles.categoryIconContainer,
@@ -503,8 +478,7 @@ export default function BookingScreen() {
                   <Image
                     source={category.image}
                     style={styles.categoryImage}
-                    accessibilityLabel={category.name}
-                  />
+                    accessibilityLabel={category.name} />
                 </View>
                 <Text
                   style={[
@@ -529,88 +503,27 @@ export default function BookingScreen() {
 
         {/* Service Items - Per Item */}
         {orderType === 'per-item' && (
-        <View style={styles.servicesSection}>
-          <Text style={[styles.servicesSectionTitle, { color: colors.text }]}>
-            Available Services
-          </Text>
-          {filteredServices.map((service) => {
-            const quantity = getItemQuantity(service.id);
-            const isInCart = quantity > 0;
-            function addToCart(service: any): void {
-              throw new Error('Function not implemented.');
-            }
-
-            function removeFromCart(id: any): void {
-              throw new Error('Function not implemented.');
-            }
-
-            return (
-              <TouchableOpacity
-                key={service.id}
-                activeOpacity={0.9}
-                onPress={() => addToCart(service)}
-              >
-                <Card style={[
-                  styles.serviceItem,
-                  isInCart && styles.serviceItemSelected,
-                  {
-                    borderColor: isInCart ? colors.primary : 'transparent',
-                    borderWidth: isInCart ? 2 : 0,
-                  }
-                ]}>
-                  <View style={styles.serviceContent}>
-                    <View style={styles.serviceInfo}>
-                      <Text style={[styles.serviceName, { color: colors.text }]}>
-                        {service.name}
-                      </Text>
-          {filteredServices.map((service) => {
-            const quantity = getItemQuantity(service.id);
-            const isInCart = quantity > 0;
-
-            return (
-              <TouchableOpacity
-                key={service.id}
-                activeOpacity={0.9}
-                onPress={() => addToCart(service)}
-              >
-                            {quantity}
-                          </Text>
-                        </View>
-                      )}
-                      <TouchableOpacity
-                        style={[styles.quantityButton, styles.addButton]}
-        {/* Service Items - Per Item */}
-        {orderType === 'per-item' && (
           <View style={styles.servicesSection}>
-            <Text style={[styles.servicesSectionTitle, { color: colors.text }]}>
-              Available Services
-            </Text>
+            <Text style={[styles.servicesSectionTitle, { color: colors.text }]}>Available Services</Text>
             {filteredServices.map((service) => {
               const quantity = getItemQuantity(service.id);
               const isInCart = quantity > 0;
-
               return (
                 <TouchableOpacity
                   key={service.id}
                   activeOpacity={0.9}
                   onPress={() => addToCart(service)}
                 >
-                  <Card style={[
-                    styles.serviceItem,
-                    isInCart && styles.serviceItemSelected,
-                    {
-                      borderColor: isInCart ? colors.primary : 'transparent',
-                      borderWidth: isInCart ? 2 : 0,
-                    }
-                  ]}>
+                  <Card style={{
+                    ...styles.serviceItem,
+                    ...(isInCart ? styles.serviceItemSelected : {}),
+                    borderColor: isInCart ? colors.primary : 'transparent',
+                    borderWidth: isInCart ? 2 : 0,
+                  }}>
                     <View style={styles.serviceContent}>
                       <View style={styles.serviceInfo}>
-                        <Text style={[styles.serviceName, { color: colors.text }]}>
-                          {service.name}
-                        </Text>
-                        <Text style={[styles.servicePrice, { color: colors.primary }]}>
-                          KSH {service.price}
-                        </Text>
+                        <Text style={[styles.serviceName, { color: colors.text }]}>{service.name}</Text>
+                        <Text style={[styles.servicePrice, { color: colors.primary }]}>KSH {service.price}</Text>
                       </View>
                       <View style={styles.quantityControls}>
                         {quantity > 0 && (
@@ -647,9 +560,7 @@ export default function BookingScreen() {
             })}
           </View>
         )}
-                      borderWidth: isInCart ? 2 : 0,
-                    }
-                  ]}>
+
         {/* Bag Services - Per Bag */}
         {orderType === 'per-bag' && (
           <View style={styles.servicesSection}>
@@ -677,14 +588,14 @@ export default function BookingScreen() {
                   activeOpacity={0.9}
                   onPress={() => addToBagCart(service)}
                 >
-                  <Card style={[
-                    styles.bagServiceItem,
-                    isInCart && styles.serviceItemSelected,
-                    {
+                  <Card
+                    style={{
+                      ...styles.bagServiceItem,
+                      ...(isInCart ? styles.serviceItemSelected : {}),
                       borderColor: isInCart ? colors.primary : 'transparent',
                       borderWidth: isInCart ? 2 : 0,
-                    }
-                  ]}>
+                    }}
+                  >
                     <View style={styles.bagServiceContent}>
                       <View style={styles.bagServiceInfo}>
                         <View style={styles.bagServiceHeader}>
@@ -740,122 +651,154 @@ export default function BookingScreen() {
             })}
           </View>
         )}
-                  <View style={styles.deliverySection}>
-                    <Text style={[styles.deliverySectionTitle, { color: colors.text }]}>
-                      Delivery Details
-                    </Text>
+        <View style={styles.deliverySection}>
+          <Text style={[styles.deliverySectionTitle, { color: colors.text }]}>
+            Delivery Details
+          </Text>
 
-                    <Card style={styles.deliveryCard}>
-                      <View style={styles.inputGroup}>
-                        <View style={[styles.inputIconContainer, { backgroundColor: colors.primary + '15' }]}>
-                          <MapPin size={20} color={colors.primary} />
-                        </View>
-                        <TextInput
-                          style={[styles.input, { color: colors.text, backgroundColor: colors.surface }]}
-                          placeholder="Delivery area (e.g., Westlands, Karen)"
-                          placeholderTextColor={colors.textSecondary}
-                          value={area}
-                          onChangeText={setArea} />
-                      </View>
+          <Card style={styles.deliveryCard}>
+            <View style={styles.inputGroup}>
+              <View style={[styles.inputIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                <MapPin size={20} color={colors.primary} />
+              </View>
+              <TextInput
+                style={[styles.input, { color: colors.text, backgroundColor: colors.surface }]}
+                placeholder="Delivery area (e.g., Westlands, Karen)"
+                placeholderTextColor={colors.textSecondary}
+                value={area}
+                onChangeText={setArea} />
+            </View>
 
-                      <View style={styles.inputGroup}>
-                        <View style={[styles.inputIconContainer, { backgroundColor: colors.primary + '15' }]}>
-                          <Phone size={20} color={colors.primary} />
-                        </View>
-                        <TextInput
-                          style={[styles.input, { color: colors.text, backgroundColor: colors.surface }]}
-                          placeholder="Phone number"
-                          placeholderTextColor={colors.textSecondary}
-                          value={phone}
-                          onChangeText={setPhone}
-                          keyboardType="phone-pad" />
-                      </View>
+            <View style={styles.inputGroup}>
+              <View style={[styles.inputIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                <Phone size={20} color={colors.primary} />
+              </View>
+              <TextInput
+                style={[styles.input, { color: colors.text, backgroundColor: colors.surface }]}
+                placeholder="Phone number"
+                placeholderTextColor={colors.textSecondary}
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad" />
+            </View>
 
-                      <View style={styles.inputGroup}>
-                        <View style={[styles.inputIconContainer, { backgroundColor: colors.primary + '15' }]}>
-                          <Clock size={20} color={colors.primary} />
-                        </View>
-                        <TextInput
-                          style={[styles.input, { color: colors.text, backgroundColor: colors.surface }]}
-                          placeholder="Preferred pickup time (e.g., 2:00 PM)"
-                          placeholderTextColor={colors.textSecondary}
-                          value={pickupTime}
-                          onChangeText={setPickupTime} />
-                      </View>
+            <View style={styles.inputGroup}>
+              <View style={[styles.inputIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                <Clock size={20} color={colors.primary} />
+              </View>
+              <TextInput
+                style={[styles.input, { color: colors.text, backgroundColor: colors.surface }]}
+                placeholder="Preferred pickup time (e.g., 2:00 PM)"
+                placeholderTextColor={colors.textSecondary}
+                value={pickupTime}
+                onChangeText={setPickupTime} />
+            </View>
 
-                      <View style={styles.inputGroup}>
-                        <View style={[styles.inputIconContainer, { backgroundColor: colors.success + '15' }]}>
-                          <Calendar size={20} color={colors.success} />
-                        </View>
-                        <TextInput
-                          style={[styles.input, { color: colors.text, backgroundColor: colors.surface }]}
-                          placeholder="Delivery time (e.g., 3:00 PM tomorrow)"
-                          placeholderTextColor={colors.textSecondary}
-                          value={deliveryTime}
-                          onChangeText={setDeliveryTime} />
-                      </View>
-                    </Card>
-                  </View>
+            <View style={styles.inputGroup}>
+              <View style={[styles.inputIconContainer, { backgroundColor: colors.success + '15' }]}>
+                <Calendar size={20} color={colors.success} />
+              </View>
+              <TextInput
+                style={[styles.input, { color: colors.text, backgroundColor: colors.surface }]}
+                placeholder="Delivery time (e.g., 3:00 PM tomorrow)"
+                placeholderTextColor={colors.textSecondary}
+                value={deliveryTime}
+                onChangeText={setDeliveryTime} />
+            </View>
+          </Card>
+        </View>
 
-                  {/* Premium Checkout Button */}
-                  <View style={styles.checkoutSection}>
-                    <LinearGradient
-                      colors={getCurrentCart().length > 0 ? [colors.primary, colors.primary + 'E6'] : [colors.border, colors.border]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={[styles.checkoutGradient, { opacity: getCurrentCart().length === 0 ? 0.5 : 1 }]}
-                    >
-                      <TouchableOpacity
-                        style={styles.checkoutButton}
-                        onPress={handleCheckout}
-                        disabled={getCurrentCart().length === 0}
-                        activeOpacity={0.9}
-                      >
-                        <ShoppingCart size={24} color="#FFFFFF" />
-                        <Text style={styles.checkoutButtonText}>
-                          {getCurrentCart().length === 0
-                            ? 'Add items to checkout'
-                            : `Checkout - KSH ${getTotalAmount().toLocaleString()}`}
-                        </Text>
-                      </TouchableOpacity>
-                    </LinearGradient>
-                  </View>
-      </ScrollView>
-      <PaymentSelectionModal
-        visible={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        total={getTotalAmount()}
-        onPaymentSelected={handlePaymentSelected}
-      />
+        {/* Scent Selection */}
+        <View style={{ marginHorizontal: 20, marginBottom: 24 }}>
+          <Text style={{ fontWeight: '700', fontSize: 16, marginBottom: 8, color: colors.text }}>
+            Choose Scent(s) for Your Clothes
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {scentOptions.map((scent) => (
+              <TouchableOpacity
+                key={scent}
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 16,
+                  borderRadius: 20,
+                  backgroundColor: selectedScents.includes(scent) ? colors.primary : colors.surface,
+                  borderWidth: 1,
+                  borderColor: selectedScents.includes(scent) ? colors.primary : colors.border,
+                  marginBottom: 8,
+                  marginRight: 8,
+                }}
+                onPress={() => handleScentToggle(scent)}
+                activeOpacity={0.8}
+              >
+                <Text style={{ color: selectedScents.includes(scent) ? '#fff' : colors.text }}>
+                  {scent}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
-      {orderData && (
-        <OrderSuccessModal
-          visible={showSuccessModal}
-          onClose={() => setShowSuccessModal(false)}
-          orderData={orderData}
-          onViewReceipt={() => {
-            setShowSuccessModal(false);
-            setShowReceiptModal(true);
-          }}
-        />
-      )}
-
-      {orderData && (
-        <ReceiptModal
-          visible={showReceiptModal}
-          onClose={() => setShowReceiptModal(false)}
-          orderData={orderData}
-        />
-      )}
-
-      {/* Floating WhatsApp Button */}
-      <WhatsAppButton 
-        phoneNumber="+254700000000" 
-        message="Hello! I need help with booking my laundry service." 
-      />
-    </SafeAreaView>
-  );
-}
+        {/* Premium Checkout Button */}
+        <View style={styles.checkoutSection}>
+          <LinearGradient
+            colors={getCurrentCart().length > 0 ? [colors.primary, colors.primary + 'E6'] : [colors.border, colors.border]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.checkoutGradient, { opacity: getCurrentCart().length === 0 ? 0.5 : 1 }]}
+          >
+            <TouchableOpacity
+              style={styles.checkoutButton}
+              onPress={handleCheckout}
+              disabled={getCurrentCart().length === 0}
+              activeOpacity={0.9}
+            >
+              <ShoppingCart size={24} color="#FFFFFF" />
+              <Text style={styles.checkoutButtonText}>
+                    {getCurrentCart().length === 0
+                      ? 'Add items to checkout'
+                      : `Checkout - KSH ${getTotalAmount().toLocaleString()}`}
+                  </Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            </View>
+            {/* End of ScrollView content */}
+          </ScrollView>
+          <PaymentSelectionModal
+            visible={showPaymentModal}
+            onClose={() => setShowPaymentModal(false)}
+            total={getTotalAmount()}
+            onPaymentSelected={handlePaymentSelected}
+          />
+    
+          {orderData && (
+            <OrderSuccessModal
+              visible={showSuccessModal}
+              onClose={() => setShowSuccessModal(false)}
+              orderData={orderData}
+              onViewReceipt={() => {
+                setShowSuccessModal(false);
+                setShowReceiptModal(true);
+              }}
+            />
+          )}
+    
+          {orderData && (
+            <ReceiptModal
+              visible={showReceiptModal}
+              onClose={() => setShowReceiptModal(false)}
+              orderData={orderData}
+            />
+          )}
+    
+          {/* Floating WhatsApp Button */}
+          <WhatsAppButton 
+            phoneNumber="+254700000000" 
+            message="Hello! I need help with booking my laundry service." 
+          />
+        </SafeAreaView>
+        </>
+      );
+    }
 
 const styles = StyleSheet.create({
   container: {
@@ -1160,7 +1103,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   servicePrice: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
   },
   quantityControls: {
@@ -1377,3 +1320,5 @@ const styles = StyleSheet.create({
 //   const value: any;
 //   export default value;
 // }
+
+// (Removed jpg module declaration; move to a .d.ts file in your project root)

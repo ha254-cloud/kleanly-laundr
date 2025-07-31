@@ -53,7 +53,7 @@ export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({
       onRequestClose={handleClose}
     >
       <View style={styles.overlay}>
-        <Card style={[styles.modal, { backgroundColor: colors.card }]}>
+        <Card style={StyleSheet.flatten([styles.modal, { backgroundColor: colors.card }])}>
           <View style={styles.header}>
             <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
               <Lock size={24} color={colors.primary} />

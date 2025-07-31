@@ -1,19 +1,24 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { router } from 'expo-router';
-import { auth } from '../services/firebase';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  User as FirebaseUser
-} from 'firebase/auth';
 
-type User = FirebaseUser;
+import * as SecureStore from 'expo-secure-store';
+import * as Notifications from 'expo-notifications';
+import axios from 'axios';
+
+const API_URL = "http://172.20.10.3:8000";
+
+type User = {
+  username: string;
+  email: string;
+  is_admin: boolean;
+  is_driver: boolean;
+  expo_token?: string;
+};
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -35,45 +40,55 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
-      setUser(user);
+    // Load token and user from SecureStore
+    (async () => {
+      const storedToken = await SecureStore.getItemAsync('token');
+      const storedUser = await SecureStore.getItemAsync('user');
+      if (storedToken && storedUser) {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      }
       setLoading(false);
-    });
-
-    return unsubscribe;
+    })();
   }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // Check if Firebase is properly configured
-      if (!auth) {
-        throw new Error('Firebase Auth not initialized');
+      // Get Expo push token
+      let expoToken = null;
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
       }
-      
-      // Add timeout to prevent hanging
-      const loginPromise = signInWithEmailAndPassword(auth, email, password);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Login timeout')), 15000)
-      );
-      
-      const result = await Promise.race([loginPromise, timeoutPromise]);
-      setUser(result.user);
+      if (finalStatus === 'granted') {
+        const tokenData = await Notifications.getExpoPushTokenAsync();
+        expoToken = tokenData.data;
+      }
+      // Login to backend
+      const res = await axios.post(`${API_URL}/token`, new URLSearchParams({
+        username: email,
+        password
+      }), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+      const jwt = res.data.access_token;
+      setToken(jwt);
+      await SecureStore.setItemAsync('token', jwt);
+      // Get user profile
+      const userRes = await axios.get(`${API_URL}/users/${email}`, { headers: { Authorization: `Bearer ${jwt}` } });
+      const userObj = userRes.data;
+      setUser(userObj);
+      await SecureStore.setItemAsync('user', JSON.stringify(userObj));
+      // Update Expo token if available
+      if (expoToken) {
+        await axios.patch(`${API_URL}/users/${email}`, { expo_token: expoToken }, { headers: { Authorization: `Bearer ${jwt}` } });
+      }
     } catch (error) {
-      // Handle timeout errors
-      if (error.message === 'Login timeout') {
-        throw new Error('Connection timeout. Please check your internet connection and try again.');
-      }
-      // Handle configuration errors gracefully
-      if (error.code === 'auth/configuration-not-found') {
-        throw new Error('Authentication service is not properly configured. Please contact support.');
-      }
-      if (error.code === 'auth/network-request-failed') {
-        throw new Error('Network error. Please check your internet connection and try again.');
-      }
       throw error;
     } finally {
       setLoading(false);
@@ -83,31 +98,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // Check if Firebase is properly configured
-      if (!auth) {
-        throw new Error('Firebase Auth not initialized');
+      // Get Expo push token
+      let expoToken = null;
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
       }
-      
-      // Add timeout to prevent hanging
-      const registerPromise = createUserWithEmailAndPassword(auth, email, password);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Registration timeout')), 15000)
-      );
-      
-      const result = await Promise.race([registerPromise, timeoutPromise]);
-      setUser(result.user);
+      if (finalStatus === 'granted') {
+        const tokenData = await Notifications.getExpoPushTokenAsync();
+        expoToken = tokenData.data;
+      }
+      // Register to backend
+      const res = await axios.post(`${API_URL}/register`, {
+        username: email,
+        password,
+        email,
+        expo_token: expoToken
+      });
+      // Auto-login after register
+      await login(email, password);
     } catch (error) {
-      // Handle timeout errors
-      if (error.message === 'Registration timeout') {
-        throw new Error('Connection timeout. Please check your internet connection and try again.');
-      }
-      // Handle configuration errors gracefully
-      if (error.code === 'auth/configuration-not-found') {
-        throw new Error('Authentication service is not properly configured. Please contact support.');
-      }
-      if (error.code === 'auth/network-request-failed') {
-        throw new Error('Network error. Please check your internet connection and try again.');
-      }
       throw error;
     } finally {
       setLoading(false);
@@ -117,8 +129,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     setLoading(true);
     try {
-      await signOut(auth);
       setUser(null);
+      setToken(null);
+      await SecureStore.deleteItemAsync('token');
+      await SecureStore.deleteItemAsync('user');
     } catch (error) {
       throw error;
     } finally {
@@ -129,6 +143,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value = {
     user,
     loading,
+    token,
     login,
     register,
     logout,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,13 @@ import { Colors } from '../../constants/Colors';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Order } from '../../services/orderService';
+import { Order as BaseOrder } from '../../services/orderService';
+
+// Locally extend Order type to ensure category and total are always present for UI
+type Order = BaseOrder & {
+  category?: string;
+  total?: number;
+};
 import { WhatsAppButton } from '../../components/ui/WhatsAppButton';
 
 const { width } = Dimensions.get('window');
@@ -30,10 +36,46 @@ export default function TrackOrderScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     refreshOrders();
   }, []);
+
+  useEffect(() => {
+    // Connect to WebSocket when selectedOrder changes and has a driver_id
+    if (selectedOrder && selectedOrder.driver_id) {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+      const ws = new WebSocket(`ws://YOUR_BACKEND_URL/ws/drivers/${selectedOrder.driver_id}/location`);
+      ws.onopen = () => {
+        // Optionally send a message if needed
+      };
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.lat !== undefined && data.lng !== undefined) {
+            setDriverLocation({ lat: data.lat, lng: data.lng });
+          }
+        } catch (e) {}
+      };
+      ws.onerror = (e) => {
+        // Optionally handle error
+      };
+      ws.onclose = () => {
+        // Optionally handle close
+      };
+      wsRef.current = ws;
+    } else {
+      setDriverLocation(null);
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    }
+  }, [selectedOrder]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -121,26 +163,30 @@ export default function TrackOrderScreen() {
       return;
     }
 
-    const order = orders.find(o => 
-      o.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.id?.slice(-6).toLowerCase() === searchQuery.toLowerCase()
-    );
+    const order = orders.find(o => {
+      if (!o.id) return false;
+      return (
+        o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        o.id.slice(-6).toLowerCase() === searchQuery.toLowerCase()
+      );
+    });
 
     if (order) {
       setSelectedOrder(order);
     } else {
       Alert.alert(
-        'Order Not Found', 
+        'Order Not Found',
         'No order found with this ID. Please check the order ID and try again, or select from your recent orders below.'
       );
     }
   };
 
   const formatOrderId = (id?: string) => {
-    return id ? `#${id.slice(-6).toUpperCase()}` : '#------';
+    return id && id.length >= 6 ? `#${id.slice(-6).toUpperCase()}` : '#------';
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('en-KE', {
       month: 'long',
       day: 'numeric',
@@ -150,7 +196,8 @@ export default function TrackOrderScreen() {
     });
   };
 
-  const formatShortDate = (dateString: string) => {
+  const formatShortDate = (dateString?: string) => {
+    if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('en-KE', {
       month: 'short',
       day: 'numeric',
@@ -158,13 +205,12 @@ export default function TrackOrderScreen() {
   };
 
   const getEstimatedDelivery = (order: Order) => {
+    if (!order.createdAt) return '';
     const orderDate = new Date(order.createdAt);
     const deliveryDate = new Date(orderDate);
-    
     // Add 2-3 days for delivery based on service type
     const daysToAdd = order.category === 'dry-cleaning' ? 3 : 2;
     deliveryDate.setDate(orderDate.getDate() + daysToAdd);
-    
     return deliveryDate.toLocaleDateString('en-KE', {
       weekday: 'long',
       month: 'long',
@@ -307,7 +353,7 @@ export default function TrackOrderScreen() {
                     </View>
                     <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Service:</Text>
                     <Text style={[styles.summaryValue, { color: colors.text }]}>
-                      {selectedOrder.category.replace('-', ' ').toUpperCase()}
+                      {selectedOrder?.category ? selectedOrder.category.replace('-', ' ').toUpperCase() : ''}
                     </Text>
                   </View>
                   
@@ -337,7 +383,7 @@ export default function TrackOrderScreen() {
                     </View>
                     <Text style={[styles.summaryLabel, { color: colors.text, fontWeight: '700' }]}>Total:</Text>
                     <Text style={[styles.totalAmount, { color: colors.primary }]}>
-                      KSH {selectedOrder.total.toLocaleString()}
+                      {selectedOrder?.total !== undefined ? `KSH ${selectedOrder.total.toLocaleString()}` : ''}
                     </Text>
                   </View>
                 </View>
@@ -497,18 +543,18 @@ export default function TrackOrderScreen() {
                             {getStatusIcon(order.status)}
                           </View>
                           <View style={styles.recentOrderInfo}>
-                            <Text style={[styles.recentOrderId, { color: colors.text }]}>
+                            <Text style={[styles.recentOrderId, { color: colors.text }]}> 
                               {formatOrderId(order.id)}
                             </Text>
-                            <Text style={[styles.recentOrderDate, { color: colors.textSecondary }]}>
-                              {formatShortDate(order.createdAt)} • {order.category.replace('-', ' ')}
+                            <Text style={[styles.recentOrderDate, { color: colors.textSecondary }]}> 
+                              {formatShortDate(order.createdAt)} • {(order as any).category ? (order as any).category.replace('-', ' ') : ''}
                             </Text>
-                            <Text style={[styles.recentOrderTotal, { color: colors.primary }]}>
-                              KSH {order.total.toLocaleString()}
+                            <Text style={[styles.recentOrderTotal, { color: colors.primary }]}> 
+                              {(order as any).total !== undefined ? `KSH ${(order as any).total.toLocaleString()}` : ''}
                             </Text>
                           </View>
                         </View>
-                        <View style={[styles.recentOrderArrow, { backgroundColor: colors.primary + '15' }]}>
+                        <View style={[styles.recentOrderArrow, { backgroundColor: colors.primary + '15' }]}> 
                           <Text style={[styles.arrowText, { color: colors.primary }]}>→</Text>
                         </View>
                       </View>

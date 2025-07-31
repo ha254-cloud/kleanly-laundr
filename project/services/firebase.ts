@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAuth, initializeAuth, getReactNativePersistence, connectAuthEmulator } from "firebase/auth";
+import { getAuth, initializeAuth, connectAuthEmulator, getReactNativePersistence } from "firebase/auth";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,7 +11,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyD3EG_vMbeMeuf8mdMhOtu-3ePqff6polo",
   authDomain: "kleanly-67b7b.firebaseapp.com",
   projectId: "kleanly-67b7b",
-  storageBucket: "kleanly-67b7b.firebasestorage.app",
+  storageBucket: "kleanly-67b7b.appspot.com", // fixed .app to .appspot.com
   messagingSenderId: "474784025290",
   appId: "1:474784025290:web:92b6bbfa7b85c52f040233",
   measurementId: "G-GR5WPXRPY9"
@@ -31,26 +31,24 @@ try {
     });
   }
 } catch (error) {
-  if (error.code !== 'auth/already-initialized') {
+  if (typeof error === 'object' && error !== null && 'code' in error && (error as any).code !== 'auth/already-initialized') {
     console.error('Firebase Auth initialization error:', error);
   }
   // Fallback to basic auth initialization
   auth = getAuth(app);
 }
 
-// Initialize Firestore with better error handling
+// Initialize Firestore
 export const db = getFirestore(app);
 
 // Connect to emulators in development
 if (__DEV__ || process.env.NODE_ENV === 'development') {
   try {
-    // Connect Auth emulator
-    if (!auth._delegate._authCredentials) {
+    if (!auth.emulatorConfig) {
       connectAuthEmulator(auth, 'http://localhost:9099');
     }
-    
-    // Connect Firestore emulator
-    if (!db._delegate._settings?.host?.includes('localhost')) {
+    // @ts-ignore: Firestore does not expose a public property for emulator config
+    if (!(db as any)._settings?.host?.includes('localhost')) {
       connectFirestoreEmulator(db, 'localhost', 8080);
     }
   } catch (error) {
@@ -58,20 +56,7 @@ if (__DEV__ || process.env.NODE_ENV === 'development') {
   }
 }
 
-// Configure Firestore settings for better offline support
-try {
-  // Enable offline persistence for better user experience
-  if (Platform.OS === 'web') {
-    // Web-specific Firestore settings
-    db._delegate._databaseId = db._delegate._databaseId;
-  }
-} catch (error) {
-  console.log('Firestore settings configuration:', error);
-}
-
-export { auth };
-
-// Initialize Analytics (only on web)
+// Analytics (web only)
 let analytics;
 if (typeof window !== 'undefined') {
   try {
@@ -81,5 +66,5 @@ if (typeof window !== 'undefined') {
   }
 }
 
-export { analytics };
+export { auth, analytics };
 export default app;

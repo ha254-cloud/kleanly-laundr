@@ -1,13 +1,25 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Order, orderService } from '../services/orderService';
+
+import axios from 'axios';
 import { useAuth } from './AuthContext';
+
+const API_URL = "http://172.20.10.3:8000";
+
+export interface Order {
+  id: string;
+  user_id: string;
+  status: string;
+  driver_id?: string;
+  createdAt?: string;
+  // Add other fields as needed
+}
 
 interface OrderContextType {
   orders: Order[];
   loading: boolean;
-  createOrder: (orderData: Omit<Order, 'id' | 'createdAt' | 'userID'>) => Promise<string>;
+  createOrder: (orderData: Partial<Order>) => Promise<string>;
   refreshOrders: () => Promise<void>;
-  updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
+  updateOrderStatus: (orderId: string, status: string) => Promise<void>;
 }
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -27,28 +39,22 @@ interface OrderProviderProps {
 export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
-  const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 'userID'>) => {
-    if (!user) throw new Error('User not authenticated');
-    
+  const createOrder = async (orderData: Partial<Order>) => {
+    if (!user || !token) throw new Error('User not authenticated');
     setLoading(true);
     try {
-      const orderId = await orderService.createOrder({
+      const res = await axios.post(`${API_URL}/orders/`, {
         ...orderData,
-        userID: user.uid,
+        user_id: user.username,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      
-      // Add the new order to the local state
-      const newOrder: Order = {
-        id: orderId,
-        ...orderData,
-        userID: user.uid,
-        createdAt: new Date().toISOString(),
-      };
-      
-      setOrders(prev => [newOrder, ...prev]);
-      return orderId; // Return the order ID
+      const orderId = res.data.order_id;
+      // Optionally fetch orders again
+      await refreshOrders();
+      return orderId;
     } catch (error) {
       throw error;
     } finally {
@@ -57,12 +63,14 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
   };
 
   const refreshOrders = async () => {
-    if (!user) return;
-    
+    if (!user || !token) return;
     setLoading(true);
     try {
-      const userOrders = await orderService.getUserOrders(user.uid);
-      setOrders(userOrders);
+      // Fetch all orders for this user (assuming backend supports filtering by user_id)
+      const res = await axios.get(`${API_URL}/orders/user/${user.username}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setOrders(res.data);
     } catch (error) {
       console.error('Error fetching orders:', error);
     } finally {
@@ -70,9 +78,12 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     }
   };
 
-  const updateOrderStatus = async (orderId: string, status: Order['status']) => {
+  const updateOrderStatus = async (orderId: string, status: string) => {
+    if (!token) throw new Error('Not authenticated');
     try {
-      await orderService.updateOrderStatus(orderId, status);
+      await axios.patch(`${API_URL}/orders/${orderId}/status`, { status }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setOrders(prev =>
         prev.map(order =>
           order.id === orderId ? { ...order, status } : order

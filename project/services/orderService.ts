@@ -1,100 +1,47 @@
-import { db } from './firebase';
-import { 
-  collection, 
-  addDoc, 
-  query, 
-  where, 
-  orderBy, 
-  getDocs, 
-  doc, 
-  updateDoc, 
-  getDoc 
-} from 'firebase/firestore';
+import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
+
+const API_URL = "http://192.168.1.100:8000";
 
 export interface Order {
   id?: string;
-  userID: string;
-  category: string;
-  date: string;
-  address: string;
-  status: 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled';
-  createdAt: string;
-  items: string[];
-  total: number;
+  user_id: string;
+  category?: string;
+  date?: string;
+  address?: string;
+  status: string;
+  createdAt?: string;
+  items?: string[];
+  total?: number;
   pickupTime?: string;
   notes?: string;
+  driver_id?: string;
 }
 
 export const orderService = {
-  async createOrder(orderData: Omit<Order, 'id' | 'createdAt'>): Promise<string> {
-    try {
-      const order = {
-        ...orderData,
-        createdAt: new Date().toISOString(),
-      };
-      
-      const docRef = await addDoc(collection(db, 'orders'), order);
-      return docRef.id;
-    } catch (error) {
-      if (error.code === 'unavailable') {
-        throw new Error('Service temporarily unavailable. Please try again.');
-      }
-      throw error;
-    }
+  async createOrder(orderData: Partial<Order>): Promise<string> {
+    const jwt = await SecureStore.getItemAsync('jwt');
+    if (!jwt) throw new Error('Not authenticated');
+    const res = await axios.post(`${API_URL}/orders/`, orderData, {
+      headers: { Authorization: `Bearer ${jwt}` }
+    });
+    return res.data.order_id;
   },
 
-  async getUserOrders(userID: string): Promise<Order[]> {
-    try {
-      const q = query(
-        collection(db, 'orders'),
-        where('userID', '==', userID),
-        orderBy('createdAt', 'desc')
-      );
-      const snapshot = await getDocs(q);
-      
-      return snapshot.docs.map(docSnap => ({
-        id: docSnap.id,
-        ...docSnap.data()
-      } as Order));
-    } catch (error) {
-      if (error.code === 'unavailable') {
-        console.log('Firestore temporarily unavailable, returning empty array');
-        return [];
-      }
-      throw error;
-    }
+  async getUserOrders(user_id: string): Promise<Order[]> {
+    const jwt = await SecureStore.getItemAsync('jwt');
+    if (!jwt) throw new Error('Not authenticated');
+    const res = await axios.get(`${API_URL}/orders/user/${user_id}`, {
+      headers: { Authorization: `Bearer ${jwt}` }
+    });
+    return res.data;
   },
 
-  async updateOrderStatus(orderId: string, status: Order['status']): Promise<void> {
-    try {
-      const orderRef = doc(db, 'orders', orderId);
-      await updateDoc(orderRef, { status });
-    } catch (error) {
-      if (error.code === 'unavailable') {
-        throw new Error('Service temporarily unavailable. Please try again.');
-      }
-      throw error;
-    }
+  async updateOrderStatus(orderId: string, status: string) {
+    const jwt = await SecureStore.getItemAsync('jwt');
+    if (!jwt) throw new Error('Not authenticated');
+    await axios.patch(`${API_URL}/orders/${orderId}/status`, { status }, {
+      headers: { Authorization: `Bearer ${jwt}` }
+    });
   },
-
-  async getOrderById(orderId: string): Promise<Order | null> {
-    try {
-      const orderRef = doc(db, 'orders', orderId);
-      const docSnap = await getDoc(orderRef);
-      
-      if (docSnap.exists()) {
-        return { 
-          id: docSnap.id, 
-          ...docSnap.data() 
-        } as Order;
-      }
-      return null;
-    } catch (error) {
-      if (error.code === 'unavailable') {
-        console.log('Firestore temporarily unavailable');
-        return null;
-      }
-      throw error;
-    }
-  }
 };
